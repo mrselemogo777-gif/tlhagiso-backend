@@ -1,0 +1,26 @@
+{
+  "model_name": "Tlhagiso_Message_Classifier",
+  "version": "1.0.0",
+  "classifier_type": "Naive Bayes",
+  "vectorizer": "TF-IDF",
+  "features": 5000,
+  "accuracy": "97.22%",
+  "classes": [
+    "ham",
+    "spam"
+  ],
+  "preprocessing": {
+    "lowercase": true,
+    "url_removal": true,
+    "email_removal": true,
+    "phone_removal": true,
+    "special_char_removal": true,
+    "lemmatization": true
+  },
+  "performance": {
+    "accuracy": 0.9721973094170404,
+    "precision": 1.0,
+    "recall": 0.7919463087248322,
+    "f1_score": 0.8838951310861424
+  }
+}

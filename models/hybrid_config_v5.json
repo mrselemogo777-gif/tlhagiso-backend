@@ -1,0 +1,45 @@
+{
+    "metadata": {
+        "project_name": "Tlhagiso SMS Detection System",
+        "version": "5.0.0",
+        "last_updated": "2026-07-04",
+        "market": "Botswana",
+        "author": "cheezboi"
+    },
+    "classification_settings": {
+        "base_threshold": 0.35,
+        "max_tfidf_features": 5000,
+        "positive_class_label": "spam"
+    },
+    "blacklist_guardrails": {
+        "botswana_brands": [
+            "mascom",
+            "orange",
+            "btc",
+            "mtn",
+            "choppies",
+            "fnb",
+            "bank of botswana"
+        ],
+        "high_risk_words": [
+            "verify",
+            "compromised",
+            "blocked",
+            "suspended",
+            "urgent",
+            "win",
+            "claim",
+            "free",
+            "reward"
+        ]
+    },
+    "whitelist_guardrails": {
+        "syntax_resilient_utility_tokens": [
+            "balance",
+            "bundle",
+            "recharge",
+            "expires",
+            "payment of"
+        ]
+    }
+}

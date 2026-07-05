@@ -1,0 +1,56 @@
+{
+  "model_name": "Tlhagiso_URL_Classifier",
+  "version": "1.0.0",
+  "classifier_type": "SVM",
+  "features": 22,
+  "classes": [
+    0,
+    1
+  ],
+  "feature_names": [
+    "url_len",
+    "dom_len",
+    "is_ip",
+    "tld_len",
+    "subdom_cnt",
+    "letter_cnt",
+    "digit_cnt",
+    "special_cnt",
+    "eq_cnt",
+    "qm_cnt",
+    "amp_cnt",
+    "dot_cnt",
+    "dash_cnt",
+    "under_cnt",
+    "letter_ratio",
+    "digit_ratio",
+    "spec_ratio",
+    "is_https",
+    "slash_cnt",
+    "entropy",
+    "path_len",
+    "query_len"
+  ],
+  "top_features": [
+    {
+      "feature": "dom_len",
+      "importance": 0.095
+    },
+    {
+      "feature": "spec_ratio",
+      "importance": 0.057
+    },
+    {
+      "feature": "path_len",
+      "importance": 0.049
+    },
+    {
+      "feature": "subdom_cnt",
+      "importance": 0.034
+    },
+    {
+      "feature": "dash_cnt",
+      "importance": 0.033
+    }
+  ]
+}
