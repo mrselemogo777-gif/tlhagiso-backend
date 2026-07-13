@@ -93,14 +93,15 @@ def scan_sms():
 def scan_batch():
     try:
         data = request.get_json()
-        if not data or 'messages' not in data:
+        if not data or ('messages' not in data and 'urls' not in data):
             return jsonify({'error': 'No messages provided'}), 400
         
         from services.sms_service import SMSService
         sms_service = SMSService()
         
         results = []
-        for msg in data['messages']:
+        items = data.get('messages') or data.get('urls', [])
+        for msg in items:
             try:
                 result = sms_service.detect(msg)
                 result['type'] = 'sms'
