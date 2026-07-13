@@ -3,6 +3,7 @@ from flask_cors import CORS
 import os
 import sys
 import traceback
+import re
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -55,7 +56,7 @@ def scan_url():
             'result': 'error'
         }), 500
 
-# SMS Scan Endpoint - FIXED
+# SMS Scan Endpoint
 @app.route('/api/scan/sms', methods=['POST'])
 def scan_sms():
     try:
@@ -63,7 +64,6 @@ def scan_sms():
         if not data:
             return jsonify({'error': 'No data provided'}), 400
         
-        # Support both 'message' and 'text' parameters
         sms_text = data.get('message') or data.get('text')
         if not sms_text:
             return jsonify({'error': 'No message/text provided'}), 400
@@ -88,32 +88,57 @@ def scan_sms():
             'result': 'error'
         }), 500
 
-# Batch Scan Endpoint
+# Batch Scan Endpoint - FIXED
 @app.route('/api/scan/batch', methods=['POST'])
 def scan_batch():
     try:
         data = request.get_json()
         if not data or ('messages' not in data and 'urls' not in data):
-            return jsonify({'error': 'No messages provided'}), 400
-        
-        from services.sms_service import SMSService
-        sms_service = SMSService()
+            return jsonify({'error': 'No messages or URLs provided'}), 400
         
         results = []
-        items = data.get('messages') or data.get('urls', [])
-        for msg in items:
-            try:
-                result = sms_service.detect(msg)
-                result['type'] = 'sms'
-                results.append(result)
-            except Exception as e:
-                results.append({
-                    'error': str(e),
-                    'message': msg,
-                    'is_phishing': False,
-                    'probability': 0.0,
-                    'result': 'error'
-                })
+        
+        # Check if it's SMS messages
+        if 'messages' in data:
+            from services.sms_service import SMSService
+            sms_service = SMSService()
+            
+            for msg in data['messages']:
+                try:
+                    result = sms_service.detect(msg)
+                    result['type'] = 'sms'
+                    result['message'] = msg
+                    results.append(result)
+                except Exception as e:
+                    results.append({
+                        'error': str(e),
+                        'message': msg,
+                        'is_phishing': False,
+                        'probability': 0.0,
+                        'result': 'error',
+                        'type': 'sms'
+                    })
+        
+        # Check if it's URLs
+        elif 'urls' in data:
+            from services.url_service import URLService
+            url_service = URLService()
+            
+            for url in data['urls']:
+                try:
+                    result = url_service.detect(url)
+                    result['type'] = 'url'
+                    result['url'] = url
+                    results.append(result)
+                except Exception as e:
+                    results.append({
+                        'error': str(e),
+                        'url': url,
+                        'is_phishing': False,
+                        'probability': 0.0,
+                        'result': 'error',
+                        'type': 'url'
+                    })
         
         return jsonify({
             'results': results,
@@ -122,6 +147,7 @@ def scan_batch():
         
     except Exception as e:
         print(f"Error in scan_batch: {str(e)}")
+        print(traceback.format_exc())
         return jsonify({'error': str(e)}), 500
 
 # SMS Health Check
