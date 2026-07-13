@@ -416,3 +416,17 @@ class SMSService:
                 'error': str(e),
                 'type': 'sms'
             }
+
+    # Prize/Lottery Scam Detection
+    prize_words = ["won", "win", "winner", "prize", "claim", "reward", "congratulations", "congrats", "lucky", "selected"]
+    if any(word in sms_text for word in prize_words):
+        has_url = re.search(r'http\S+|www\S+', sms_text)
+        has_money = re.search(r'\d+[\s,]*Pula|\d+[\s,]*P\b|\d+\.?\d*\s*(?:million|billion|thousand)', sms_text)
+        if has_url or has_money:
+            return {
+                'is_phishing': True,
+                'probability': 1.0,
+                'reason': 'Layer 1: Prize/Lottery scam detected',
+                'layer': 1,
+                'flag': 'prize_scam'
+            }
