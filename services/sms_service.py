@@ -32,7 +32,6 @@ URGENCY_KEYWORDS = [
 TELECOM_UTILITY = {
     "mascom": ["balance", "bundle", "data", "airtime", "recharge", "expires", "payment", "pula"],
     "orange": ["balance", "bundle", "data", "airtime", "recharge", "expires", "payment", "pula"],
-    "btc": ["balance", "bundle", "data", "airtime", "recharge", "expires", "payment", "pula"],
     "mtn": ["balance", "bundle", "data", "airtime", "recharge", "expires", "payment", "pula"],
 }
 
