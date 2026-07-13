@@ -8,6 +8,7 @@ from config import Config
 from models.url_model import URLModel
 import json
 import traceback
+import os
 
 # ============================================================
 # LAYER 1: EXACT MATCHES (Verified Trusted Domains)
@@ -34,75 +35,83 @@ TRUSTED_DOMAINS = {
     "un.org", "unicef.org", "who.int", "worldbank.org", "imf.org",
 }
 
-# ============================================================
-# LAYER 2: PLATFORM WILDCARDS
-# ============================================================
 PLATFORM_WILDCARDS = {
     "github.io", "vercel.app", "netlify.app", "pages.dev",
-    "gitlab.io", "herokuapp.com", "azurewebsites.net", "cloudfront.net",
-    "s3.amazonaws.com", "wordpress.com", "blogger.com", "medium.com",
-    "substack.com", "hashnode.dev", "dev.to", "notion.site",
+    "gitlab.io", "herokuapp.com", "azurewebsites.net",
 }
 
-# ============================================================
-# LAYER 3: STRICT INSTITUTIONAL TLDs
-# ============================================================
 STRICT_TLDS = {
     ".gov", ".gov.bw", ".gov.za", ".gov.uk", ".edu", ".ac.bw",
     ".ac.za", ".ac.uk", ".edu.za", ".mil",
 }
 
-# ============================================================
-# MAIN WHITELIST CHECKER - FIXED TO HANDLE FULL URLs
-# ============================================================
 def is_trusted_domain(domain_or_url):
-    """4-Layer Defense Matrix - Handles both domains and full URLs"""
+    """4-Layer Defense Matrix"""
     domain = str(domain_or_url).lower().strip()
     
-    # Clean the input
-    # If it's a full URL, parse it
     if domain.startswith(('http://', 'https://')):
         parsed = urlparse(domain)
         domain = parsed.netloc
     else:
-        # If it's a domain with path, extract just the domain part
         if '/' in domain:
             domain = domain.split('/')[0]
     
-    # Remove port if present
     if ':' in domain:
         domain = domain.split(':')[0]
-    
-    # Remove www prefix
     if domain.startswith('www.'):
         domain = domain[4:]
     
-    # LAYER 1: Exact Match
     if domain in TRUSTED_DOMAINS:
         return True
     
-    # LAYER 2: Platform Wildcards
     for wildcard in PLATFORM_WILDCARDS:
         if domain == wildcard or domain.endswith('.' + wildcard):
             return True
     
-    # LAYER 3: Strict Institutional TLDs
     for tld in STRICT_TLDS:
         if domain.endswith(tld):
             return True
     
-    # LAYER 4: NOT WHITELISTED → ML ENGINE
     return False
 
-# ============================================================
-# URL SERVICE CLASS
-# ============================================================
 class URLService:
     def __init__(self):
         self.model = URLModel()
-        with open('/home/cheezboi/models/url_features.json', 'r') as f:
-            self.features = json.load(f)
-        print(f"   URL features loaded: {len(self.features)} features")
+        
+        # Fix: Use relative path or environment variable
+        model_path = os.environ.get('MODEL_PATH', '/home/cheezboi/models/url_features.json')
+        
+        # If running on Vercel, try relative path
+        if os.environ.get('VERCEL'):
+            model_path = os.path.join(os.path.dirname(__file__), '../models/url_features.json')
+        
+        # Try multiple locations
+        possible_paths = [
+            model_path,
+            'models/url_features.json',
+            '/home/cheezboi/models/url_features.json',
+            os.path.join(os.path.dirname(__file__), '../models/url_features.json'),
+            os.path.join(os.getcwd(), 'models/url_features.json'),
+        ]
+        
+        for path in possible_paths:
+            try:
+                with open(path, 'r') as f:
+                    self.features = json.load(f)
+                print(f"   URL features loaded from: {path}")
+                break
+            except:
+                continue
+        else:
+            # If no file found, use default features
+            print("   WARNING: Using default features")
+            self.features = ['url_len', 'dot_cnt', 'slash_cnt', 'dash_cnt', 
+                           'under_cnt', 'digit_cnt', 'special_cnt', 'is_https',
+                           'eq_cnt', 'qm_cnt', 'amp_cnt', 'letter_cnt',
+                           'dom_len', 'subdom_cnt', 'tld_len', 'is_ip',
+                           'letter_ratio', 'digit_ratio', 'spec_ratio',
+                           'path_len', 'query_len', 'entropy']
+        
         print(f"   L1 Trusted Domains: {len(TRUSTED_DOMAINS)}")
         print(f"   L2 Platform Wildcards: {len(PLATFORM_WILDCARDS)}")
         print(f"   L3 Strict TLDs: {len(STRICT_TLDS)}")
