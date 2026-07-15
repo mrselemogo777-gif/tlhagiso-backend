@@ -2,13 +2,13 @@
 import re
 import pandas as pd
 import math
+import os
+import json
+import traceback
 from collections import Counter
 from urllib.parse import urlparse
 from config import Config
 from models.url_model import URLModel
-import json
-import traceback
-import os
 
 # ============================================================
 # LAYER 1: EXACT MATCHES (Verified Trusted Domains)
@@ -179,21 +179,12 @@ STRICT_TLDS = {
 }
 
 # ============================================================
-# MAIN WHITELIST CHECKER (4-Layer Defense + Enhancements)
+# MAIN WHITELIST CHECKER
 # ============================================================
 
 def is_trusted_domain(domain):
-    """
-    4-Layer Defense Matrix + Enhancements:
-    Layer 1: Exact matches in TRUSTED_DOMAINS
-    Layer 1.5: Botswana Brand Protection + Phishing Patterns
-    Layer 2: Platform wildcards (*.vercel.app, *.github.io)
-    Layer 3: Strict Institutional TLDs (.gov, .edu, .ac.bw)
-    Layer 4: Everything else → ML Engine
-    """
     domain = domain.lower().strip()
     
-    # Remove protocol if present
     if domain.startswith('http://') or domain.startswith('https://'):
         parsed = urlparse(domain)
         domain = parsed.netloc or domain
@@ -204,66 +195,45 @@ def is_trusted_domain(domain):
     if domain.startswith('www.'):
         domain = domain[4:]
     
-    # ============================================================
-    # LAYER 1: EXACT MATCH CHECK
-    # ============================================================
+    # LAYER 1: Exact Match
     if domain in TRUSTED_DOMAINS:
         return True
     
-    # ============================================================
-    # LAYER 1.5: BOTSWANA BRAND PROTECTION
-    # ============================================================
-    
-    # Check if domain contains a Botswana brand
+    # LAYER 1.5: Botswana Brand Protection
     for brand, data in BOTSWANA_BRANDS.items():
         brand_found = False
         for keyword in data["keywords"]:
             if keyword in domain:
                 brand_found = True
                 break
-        
         if brand_found:
-            # Check if it's a trusted domain for this brand
             for trusted in data["trusted"]:
                 if domain == trusted or domain.endswith('.' + trusted):
                     return True
-            
-            # Check for suspicious keywords
             for sus in data["suspicious_keywords"]:
                 if sus in domain:
-                    return False  # PHISHING
+                    return False
     
-    # ============================================================
-    # LAYER 1.5: PHISHING PATTERN DETECTION
-    # ============================================================
-    
-    # Check suspicious patterns
+    # LAYER 1.5: Phishing Patterns
     for pattern in SUSPICIOUS_PATTERNS:
         if re.search(pattern, domain, re.IGNORECASE):
-            return False  # PHISHING
+            return False
     
-    # Check suspicious TLDs
     for tld in SUSPICIOUS_TLDS:
         if domain.endswith(tld):
-            return False  # PHISHING
+            return False
     
-    # ============================================================
-    # LAYER 2: PLATFORM WILDCARD CHECK
-    # ============================================================
+    # LAYER 2: Platform Wildcards
     for wildcard in PLATFORM_WILDCARDS:
         if domain == wildcard or domain.endswith('.' + wildcard):
             return True
     
-    # ============================================================
-    # LAYER 3: STRICT INSTITUTIONAL TLD CHECK
-    # ============================================================
+    # LAYER 3: Strict TLDs
     for tld in STRICT_TLDS:
         if domain.endswith(tld):
             return True
     
-    # ============================================================
-    # LAYER 4: NOT WHITELISTED → ML ENGINE
-    # ============================================================
+    # LAYER 4: ML Engine
     return False
 
 # ============================================================
@@ -273,36 +243,42 @@ def is_trusted_domain(domain):
 class URLService:
     def __init__(self):
         self.model = URLModel()
-                # Try multiple paths for the features file
+        
+        # Flexible path loading for features file
         feature_paths = [
             '/home/cheezboi/models/url_features.json',
             'models/url_features.json',
             '../models/url_features.json',
-            os.path.join(os.path.dirname(__file__), '../models/url_features.json')
+            os.path.join(os.path.dirname(__file__), '../models/url_features.json'),
+            os.path.join(os.getcwd(), 'models/url_features.json')
         ]
+        
         features_loaded = False
         for path in feature_paths:
             try:
-                with open(path, 'r') as f:
-                    self.features = json.load(f)
-                print(f"   URL features loaded from: {path}")
-                features_loaded = True
-                break
+                if os.path.exists(path):
+                    with open(path, 'r') as f:
+                        self.features = json.load(f)
+                    print(f"   URL features loaded from: {path}")
+                    features_loaded = True
+                    break
             except:
                 continue
+        
         if not features_loaded:
             print("   WARNING: url_features.json not found, using default features")
-            self.features = ['url_len', 'dot_cnt', 'slash_cnt', 'dash_cnt', 
-                           'under_cnt', 'digit_cnt', 'special_cnt', 'is_https',
-                           'eq_cnt', 'qm_cnt', 'amp_cnt', 'letter_cnt',
-                           'dom_len', 'subdom_cnt', 'tld_len', 'is_ip',
-                           'letter_ratio', 'digit_ratio', 'spec_ratio',
-                           'path_len', 'query_len', 'entropy']
-            self.features = json.load(f)
+            self.features = [
+                'url_len', 'dot_cnt', 'slash_cnt', 'dash_cnt', 
+                'under_cnt', 'digit_cnt', 'special_cnt', 'is_https',
+                'eq_cnt', 'qm_cnt', 'amp_cnt', 'letter_cnt',
+                'dom_len', 'subdom_cnt', 'tld_len', 'is_ip',
+                'letter_ratio', 'digit_ratio', 'spec_ratio',
+                'path_len', 'query_len', 'entropy'
+            ]
+        
         print(f"   URL features loaded: {len(self.features)} features")
         print(f"   L1 Trusted Domains: {len(TRUSTED_DOMAINS)}")
         print(f"   L1.5 Botswana Brands: {len(BOTSWANA_BRANDS)}")
-        print(f"   L1.5 Phishing Patterns: Active")
         print(f"   L2 Platform Wildcards: {len(PLATFORM_WILDCARDS)}")
         print(f"   L3 Strict TLDs: {len(STRICT_TLDS)}")
         print(f"   L4 ML Engine: Active")
@@ -383,7 +359,6 @@ class URLService:
     
     def detect(self, url):
         try:
-            # LAYER 1-3: Whitelist Check
             if self._is_whitelisted(url):
                 return {
                     'is_phishing': False,
@@ -392,7 +367,6 @@ class URLService:
                     'reason': 'Verified Trusted Domain'
                 }
             
-            # LAYER 4: ML Engine for ALL other domains
             features = self.extract_features(url)
             scaled = self.model.scale(features)
             
