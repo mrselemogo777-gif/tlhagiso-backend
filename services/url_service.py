@@ -1,4 +1,4 @@
-# services/url_service.py
+# services/url_service.py — COMPLETE FINAL VERSION
 import re
 import pandas as pd
 import math
@@ -7,14 +7,13 @@ import json
 import traceback
 from collections import Counter
 from urllib.parse import urlparse
-from config import Config
 from models.url_model import URLModel
 
 # ============================================================
-# LAYER 1: EXACT MATCHES (Verified Trusted Domains)
+# LAYER 1: EXACT MATCHES — WORLDWIDE + BOTSWANA
 # ============================================================
 TRUSTED_DOMAINS = {
-    # ... your existing trusted domains ...
+    # ─── GLOBAL TECH ───
     "google.com", "gmail.com", "youtube.com", "drive.google.com",
     "docs.google.com", "mail.google.com", "calendar.google.com",
     "maps.google.com", "analytics.google.com", "googleapis.com",
@@ -25,8 +24,13 @@ TRUSTED_DOMAINS = {
     "facebook.com", "fb.com", "instagram.com", "twitter.com", "x.com",
     "linkedin.com", "whatsapp.com", "telegram.org", "discord.com",
     "slack.com", "zoom.us", "skype.com", "wikipedia.org",
+    "paypal.com", "ebay.com", "etsy.com", "shopify.com",
+    "cloudflare.com", "digitalocean.com", "linode.com",
+    "heroku.com", "aws.amazon.com", "azure.microsoft.com",
+    "docker.com", "kubernetes.io", "jenkins.io",
+    "wordpress.org", "drupal.org", "joomla.org",
     
-    # BOTSWANA TRUSTED DOMAINS
+    # ─── BOTSWANA ───
     "gov.bw", "parliament.gov.bw", "presidency.gov.bw",
     "justice.gov.bw", "health.gov.bw", "education.gov.bw",
     "transport.gov.bw", "agriculture.gov.bw", "lands.gov.bw",
@@ -40,78 +44,87 @@ TRUSTED_DOMAINS = {
     "barclays.co.bw", "abcbank.co.bw", "debswana.com", "debswana.bw",
     "ub.bw", "bca.bw", "biust.ac.bw", "bufm.ac.bw",
     "dailynews.gov.bw", "mmegi.bw", "airbotswana.co.bw",
-    "mackair.co.bw", "choppies.co.bw", "game.co.za", "shoprite.co.za",
-    "picknpay.co.za", "woolworths.co.za",
+    "mackair.co.bw", "choppies.co.bw",
     
-    # SOUTH AFRICA TRUSTED
+    # ─── SOUTH AFRICA ───
     "gov.za", "parliament.gov.za", "saps.gov.za", "sars.gov.za",
     "eskom.co.za", "transnet.co.za", "telkom.co.za",
     "fnb.co.za", "standardbank.co.za", "absa.co.za", "nedbank.co.za",
     "capitec.co.za", "discovery.co.za", "mtn.co.za", "vodacom.co.za",
     
-    # INTERNATIONAL
+    # ─── OTHER AFRICAN COUNTRIES ───
+    "gov.ng", "kenya.go.ke", "gov.ke", "statehouse.go.ke", "mfa.go.ke", "immigration.go.ke", "ecitizen.go.ke", "etax.go.ke", "kra.go.ke",
+    
+    # ─── INTERNATIONAL ORGANIZATIONS ───
     "un.org", "unicef.org", "who.int", "worldbank.org", "imf.org",
     "oecd.org", "nato.int", "europa.eu", "redcross.org", "icc-cpi.int",
+    "undp.org", "unesco.org", "ilo.org", "fao.org", "wfp.org",
+    "unhcr.org", "unido.org", "itu.int", "wipo.int",
+    
+    # ─── EDUCATION — GLOBAL ───
+    "harvard.edu", "stanford.edu", "mit.edu", "oxford.ac.uk",
+    "cambridge.ac.uk", "ucl.ac.uk", "imperial.ac.uk",
+    "ethz.ch", "epfl.ch", "tudelft.nl", "kuleuven.be",
+    "ub.bw", "bca.bw", "biust.ac.bw", "bufm.ac.bw",
+    
+    # ─── RETAIL & SHOPPING ───
+    "game.co.za", "shoprite.co.za", "picknpay.co.za", "woolworths.co.za",
+    "checkers.co.za", "dischem.co.za", "takealot.com", "superbalist.com",
+    "amazon.com", "ebay.com", "etsy.com", "walmart.com",
+    "target.com", "bestbuy.com", "costco.com", "ikea.com",
+    
+    # ─── BANKING — GLOBAL ───
+    "chase.com", "wellsfargo.com", "bankofamerica.com",
+    "citibank.com", "capitalone.com", "usbank.com",
+    "hsbc.com", "barclays.com", "lloydsbank.co.uk",
+    "natwest.com", "rbs.co.uk", "santander.co.uk",
+    "bnpparibas.com", "societegenerale.com", "credit-agricole.fr",
+    "deutsche-bank.de", "commerzbank.de", "unicredit.it",
+    "intesasanpaolo.com", "bbva.com", "santander.com",
+    
+    # ─── GOVERNMENT — GLOBAL ───
+    "usa.gov", "whitehouse.gov", "state.gov", "defense.gov",
+    "nsa.gov", "fbi.gov", "cia.gov", "nasa.gov",
+    "uk.gov", "parliament.uk", "mod.uk", "gov.uk",
+    "europa.eu", "ec.europa.eu", "consilium.europa.eu",
+    "bundesregierung.de", "elysee.fr", "kremlin.ru",
+    "mfa.gov.cn", "gov.cn", "southkorea.go.kr", "japan.go.jp",
+    
+    # ─── NEWS & MEDIA ───
+    "bbc.com", "bbc.co.uk", "cnn.com", "nytimes.com",
+    "washingtonpost.com", "theguardian.com", "reuters.com",
+    "apnews.com", "aljazeera.com", "lemonde.fr", "elpais.com",
+    "spiegel.de", "corriere.it", "thehindu.com", "timesofindia.com",
+    
+    # ─── SOCIAL MEDIA ───
+    "facebook.com", "fb.com", "instagram.com", "twitter.com",
+    "x.com", "linkedin.com", "whatsapp.com", "telegram.org",
+    "discord.com", "reddit.com", "tumblr.com", "pinterest.com",
+    "snapchat.com", "tiktok.com",
+    
+    # ─── SEARCH ENGINES ───
+    "google.com", "bing.com", "yahoo.com", "duckduckgo.com",
+    "baidu.com", "yandex.ru", "seznam.cz", "naver.com",
 }
 
 # ============================================================
 # LAYER 1.5: BOTSWANA BRAND PROTECTION
 # ============================================================
 BOTSWANA_BRANDS = {
-    "mascom": {
-        "trusted": ["mascom.bw"],
-        "keywords": ["mascom", "mascom.bw"],
-        "suspicious_keywords": ["rewards", "promo", "free", "verify", "login", "claim", "winner", "cash", "prize"]
-    },
-    "orange": {
-        "trusted": ["orange.co.bw"],
-        "keywords": ["orange", "orange.co.bw"],
-        "suspicious_keywords": ["promo", "free", "rewards", "claim", "winner", "cash", "prize", "verify"]
-    },
-    "fnb": {
-        "trusted": ["fnb.co.bw", "fnb.co.za"],
-        "keywords": ["fnb", "fnb.co.bw", "fnb.co.za"],
-        "suspicious_keywords": ["verify", "secure", "unlock", "alert", "login", "blocked", "suspended", "fraud"]
-    },
-    "btc": {
-        "trusted": ["btc.co.bw"],
-        "keywords": ["btc", "btc.co.bw"],
-        "suspicious_keywords": ["payment", "renew", "disconnect", "verify", "fees", "outstanding", "line"]
-    },
-    "stanbic": {
-        "trusted": ["stanbic.co.bw"],
-        "keywords": ["stanbic", "stanbic.co.bw"],
-        "suspicious_keywords": ["verify", "secure", "unlock", "alert", "login", "blocked"]
-    },
-    "bank of botswana": {
-        "trusted": ["bankofbotswana.bw", "bob.bw"],
-        "keywords": ["bank of botswana", "bankofbotswana.bw", "bob.bw"],
-        "suspicious_keywords": ["frozen", "verify", "secure", "login", "blocked", "suspended"]
-    },
-    "bofinet": {
-        "trusted": ["bofinet.co.bw"],
-        "keywords": ["bofinet", "bofinet.co.bw"],
-        "suspicious_keywords": ["tax", "payment", "submission", "filing", "deadline", "refund"]
-    },
-    "burs": {
-        "trusted": ["burs.org.bw"],
-        "keywords": ["burs", "burs.org.bw"],
-        "suspicious_keywords": ["tax", "refund", "return", "submission", "deadline", "payment"]
-    },
-    "dhl": {
-        "trusted": ["dhl.co.bw", "dhl.com"],
-        "keywords": ["dhl", "dhl.co.bw", "dhl.com"],
-        "suspicious_keywords": ["tracking", "delivery", "package", "arrived", "shipped", "customs", "fee"]
-    },
-    "choppies": {
-        "trusted": ["choppies.co.bw"],
-        "keywords": ["choppies", "choppies.co.bw"],
-        "suspicious_keywords": ["voucher", "gift", "winner", "cash", "prize", "reward"]
-    }
+    "mascom": {"trusted": ["mascom.bw"], "suspicious": ["rewards", "promo", "free", "verify", "login", "claim", "winner", "cash", "prize"]},
+    "orange": {"trusted": ["orange.co.bw"], "suspicious": ["promo", "free", "rewards", "claim", "winner", "cash", "prize", "verify"]},
+    "fnb": {"trusted": ["fnb.co.bw", "fnb.co.za"], "suspicious": ["verify", "secure", "unlock", "alert", "login", "blocked", "suspended", "fraud"]},
+    "btc": {"trusted": ["btc.co.bw"], "suspicious": ["payment", "renew", "disconnect", "verify", "fees", "outstanding", "line"]},
+    "stanbic": {"trusted": ["stanbic.co.bw"], "suspicious": ["verify", "secure", "unlock", "alert", "login", "blocked"]},
+    "bank of botswana": {"trusted": ["bankofbotswana.bw", "bob.bw"], "suspicious": ["frozen", "verify", "secure", "login", "blocked", "suspended"]},
+    "bofinet": {"trusted": ["bofinet.co.bw"], "suspicious": ["tax", "payment", "submission", "filing", "deadline", "refund"]},
+    "burs": {"trusted": ["burs.org.bw"], "suspicious": ["tax", "refund", "return", "submission", "deadline", "payment"]},
+    "dhl": {"trusted": ["dhl.co.bw", "dhl.com"], "suspicious": ["tracking", "delivery", "package", "arrived", "shipped", "customs", "fee"]},
+    "choppies": {"trusted": ["choppies.co.bw"], "suspicious": ["voucher", "gift", "winner", "cash", "prize", "reward"]}
 }
 
 # ============================================================
-# LAYER 1.5: SUSPICIOUS PATTERNS
+# LAYER 1.5: SUSPICIOUS PATTERNS — WORLDWIDE
 # ============================================================
 SUSPICIOUS_TLDS = {
     '.xyz', '.top', '.club', '.online', '.info', '.site',
@@ -119,28 +132,44 @@ SUSPICIOUS_TLDS = {
     '.cc', '.co', '.io', '.bz', '.name', '.work', '.click',
     '.link', '.press', '.store', '.shop', '.tech', '.cloud',
     '.host', '.web', '.app', '.dev', '.blog', '.site',
-    '.gq', '.eu', '.su', '.by', '.kz', '.uz'
+    '.gq', '.eu', '.su', '.by', '.kz', '.uz',
+    '.win', '.bid', '.date', '.download', '.review', '.trade',
+    '.men', '.party', '.loan', '.racing', '.accountant', '.science',
+    '.website', '.space', '.tech', '.store', '.shop', '.online',
 }
 
 SUSPICIOUS_PATTERNS = [
     r'(mascom|orange|fnb|btc|stanbic|bankofbotswana|bofinet|burs|dhl|choppies).*(promo|free|rewards|cash|prize|verify|login|claim)',
     r'(fnb|stanbic|bank).*(login|secure|verify|blocked|suspended)',
+    r'(paypal|amazon|apple|microsoft|google|facebook|instagram|whatsapp|telegram).*(verify|confirm|login|secure|unlock)',
+    r'(chase|wellsfargo|bankofamerica|citibank|hsbc|barclays).*(verify|login|secure|unlock)',
+    r'(fedex|dhl|ups|usps).*(tracking|delivery|package|customs|fee)',
+    r'(netflix|spotify|apple|amazon|paypal).*(account|billing|payment|update)',
     r'.*act\s+now.*',
     r'.*immediate\s+action.*',
-    r'.*your\s+account\s+(will\s+be|is|has\s+been)\s+(blocked|suspended|frozen|locked)',
-    r'.*click\s+here\s+to\s+(verify|confirm|unlock|claim)',
-    r'.*you\s+(won|have\s+won|are\s+a\s+winner).*',
-    r'.*claim\s+your\s+(prize|reward|cash|money).*',
-    r'.*congratulations.*(won|winner|prize|cash).*',
-    r'.*login.*(secure|verify).*',
-    r'.*signin.*(secure|verify).*',
-    r'.*(account|profile|payment).*(update|verify|confirm).*',
+    r'.*your\s+account\s+(will\s+be|is|has\s+been)\s+(blocked|suspended|frozen|locked|disabled|deactivated)',
+    r'.*click\s+here\s+to\s+(verify|confirm|unlock|claim|update|secure)',
+    r'.*you\s+(won|have\s+won|are\s+a\s+winner|selected|chosen).*',
+    r'.*claim\s+your\s+(prize|reward|cash|money|gift|voucher).*',
+    r'.*congratulations.*(won|winner|prize|cash|gift).*',
+    r'.*(limited\s+time|expires\s+soon|don\'t\s+delay|last\s+chance).*',
+    r'.*login.*(secure|verify|confirm|update).*',
+    r'.*signin.*(secure|verify|confirm).*',
+    r'.*(account|profile|payment|billing).*(update|verify|confirm|validate).*',
     r'.*security\s+alert.*',
     r'.*fraud\s+alert.*',
+    r'.*unusual\s+activity.*',
+    r'.*suspicious\s+activity.*',
+    r'.*won.*(cash|money|prize|gift).*',
+    r'.*congratulations.*(cash|money|prize).*',
+    r'.*free.*(money|cash|prize|gift|voucher).*',
+    r'.*claim.*(cash|money|prize).*',
+    r'.*inheritance.*(nigerian|prince|fortune|million).*',
+    r'.*nigerian\s+prince.*',
 ]
 
 # ============================================================
-# LAYER 2: PLATFORM WILDCARDS
+# LAYER 2: PLATFORM WILDCARDS — WORLDWIDE
 # ============================================================
 PLATFORM_WILDCARDS = {
     "github.io", "vercel.app", "netlify.app", "pages.dev",
@@ -155,18 +184,30 @@ PLATFORM_WILDCARDS = {
     "cloudflare.dev", "workers.dev", "raw.githubusercontent.com",
     "blob.core.windows.net", "storage.googleapis.com",
     "firebasestorage.googleapis.com",
+    "github.dev", "gitpod.io", "codespaces.com",
+    "pythonanywhere.com", "replit.com",
+    "glitch.me", "surge.sh", "neocities.org",
+    "netlify.com", "vercel.com", "cloudflare.com",
+    "page.dev", "workers.dev", "popsy.co",
+    "webflow.io", "editorx.io", "duda.co",
+    "wixsite.com", "godaddysites.com", "weebly.com",
 }
 
 # ============================================================
-# LAYER 3: STRICT INSTITUTIONAL TLDs
+# LAYER 3: STRICT INSTITUTIONAL TLDs — WORLDWIDE
 # ============================================================
 STRICT_TLDS = {
-    ".gov", ".gov.bw", ".gov.za", ".gov.uk", ".edu", ".ac.bw",
-    ".ac.za", ".ac.uk", ".edu.za", ".mil",
+    ".gov", ".gov.bw", ".gov.za", ".gov.uk", ".gov.au", ".gov.ca",
+    ".gov.in", ".gov.ng", ".gov.ke", ".gov.gh", ".gov.eg",
+    ".gov.sa", ".gov.ae", ".gov.il", ".gov.tr", ".gov.ua",
+    ".edu", ".edu.bw", ".edu.za", ".edu.au", ".edu.ca",
+    ".edu.in", ".edu.ng", ".edu.ke", ".edu.gh", ".edu.eg",
+    ".ac.bw", ".ac.za", ".ac.uk", ".ac.in", ".ac.ke",
+    ".mil", ".mil.za", ".mil.uk", ".mil.au", ".mil.ca",
 }
 
 # ============================================================
-# MAIN WHITELIST CHECKER (4-Layer Defense + Enhancements)
+# MAIN WHITELIST CHECKER
 # ============================================================
 
 def is_trusted_domain(domain):
@@ -182,10 +223,8 @@ def is_trusted_domain(domain):
     if domain.startswith('www.'):
         domain = domain[4:]
     
-    # ============================================================
     # EXCEPTION: Whitelist your own backend
-    # ============================================================
-    if domain == 'tlhagiso-backend.vercel.app' or domain.endswith('.vercel.app'):
+    if domain.endswith('.vercel.app'):
         return True
     
     # LAYER 1: Exact Match
@@ -194,37 +233,26 @@ def is_trusted_domain(domain):
     
     # LAYER 1.5: Botswana Brand Protection
     for brand, data in BOTSWANA_BRANDS.items():
-        brand_found = False
-        for keyword in data["keywords"]:
-            if keyword in domain:
-                brand_found = True
-                break
-        if brand_found:
-            for trusted in data["trusted"]:
-                if domain == trusted or domain.endswith('.' + trusted):
-                    return True
-            for sus in data["suspicious_keywords"]:
-                if sus in domain:
-                    return False
+        if brand in domain:
+            if any(domain == trusted or domain.endswith('.' + trusted) for trusted in data["trusted"]):
+                return True
+            if any(sus in domain for sus in data["suspicious"]):
+                return False
     
     # LAYER 1.5: Phishing Patterns
-    for pattern in SUSPICIOUS_PATTERNS:
-        if re.search(pattern, domain, re.IGNORECASE):
-            return False
+    if any(re.search(pattern, domain, re.IGNORECASE) for pattern in SUSPICIOUS_PATTERNS):
+        return False
     
-    for tld in SUSPICIOUS_TLDS:
-        if domain.endswith(tld):
-            return False
+    if any(domain.endswith(tld) for tld in SUSPICIOUS_TLDS):
+        return False
     
     # LAYER 2: Platform Wildcards
-    for wildcard in PLATFORM_WILDCARDS:
-        if domain == wildcard or domain.endswith('.' + wildcard):
-            return True
+    if any(domain == wc or domain.endswith('.' + wc) for wc in PLATFORM_WILDCARDS):
+        return True
     
     # LAYER 3: Strict TLDs
-    for tld in STRICT_TLDS:
-        if domain.endswith(tld):
-            return True
+    if any(domain.endswith(tld) for tld in STRICT_TLDS):
+        return True
     
     # LAYER 4: ML Engine
     return False
@@ -237,7 +265,6 @@ class URLService:
     def __init__(self):
         self.model = URLModel()
         
-        # Flexible path loading for features file
         feature_paths = [
             '/home/cheezboi/models/url_features.json',
             'models/url_features.json',
@@ -312,10 +339,7 @@ class URLService:
             features['dom_len'] = len(parts[-1]) if parts else 0
             features['subdom_cnt'] = max(0, len(parts) - 2)
             features['tld_len'] = len(parts[-1]) if len(parts) > 1 else 0
-            if parts and re.match(r'^\d+\.\d+\.\d+\.\d+$', parts[0]):
-                features['is_ip'] = 1
-            else:
-                features['is_ip'] = 0
+            features['is_ip'] = 1 if parts and re.match(r'^\d+\.\d+\.\d+\.\d+$', parts[0]) else 0
         except:
             features['dom_len'] = 0
             features['subdom_cnt'] = 0
@@ -337,8 +361,7 @@ class URLService:
         
         if len(url) > 0:
             freq = Counter(url)
-            entropy = -sum((count/len(url)) * math.log2(count/len(url)) for count in freq.values())
-            features['entropy'] = entropy
+            features['entropy'] = -sum((count/len(url)) * math.log2(count/len(url)) for count in freq.values())
         else:
             features['entropy'] = 0
         
