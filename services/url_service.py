@@ -14,7 +14,7 @@ from models.url_model import URLModel
 # LAYER 1: EXACT MATCHES (Verified Trusted Domains)
 # ============================================================
 TRUSTED_DOMAINS = {
-    # GLOBAL TECH
+    # ... your existing trusted domains ...
     "google.com", "gmail.com", "youtube.com", "drive.google.com",
     "docs.google.com", "mail.google.com", "calendar.google.com",
     "maps.google.com", "analytics.google.com", "googleapis.com",
@@ -122,19 +122,6 @@ SUSPICIOUS_TLDS = {
     '.gq', '.eu', '.su', '.by', '.kz', '.uz'
 }
 
-SUSPICIOUS_KEYWORDS = [
-    "verify", "validate", "authenticate", "confirm", "secure",
-    "protect", "login", "signin", "update", "upgrade", "renew",
-    "restore", "urgent", "immediate", "alert", "warning",
-    "blocked", "suspended", "frozen", "locked", "deactivated",
-    "terminated", "cancelled", "unauthorized", "suspicious",
-    "fraud", "free", "won", "winner", "prize", "reward",
-    "claim", "cash", "money", "pula", "promo", "offer",
-    "discount", "gift", "click", "here", "link", "connect",
-    "access", "account", "profile", "settings", "help",
-    "support", "admin", "service"
-]
-
 SUSPICIOUS_PATTERNS = [
     r'(mascom|orange|fnb|btc|stanbic|bankofbotswana|bofinet|burs|dhl|choppies).*(promo|free|rewards|cash|prize|verify|login|claim)',
     r'(fnb|stanbic|bank).*(login|secure|verify|blocked|suspended)',
@@ -179,7 +166,7 @@ STRICT_TLDS = {
 }
 
 # ============================================================
-# MAIN WHITELIST CHECKER
+# MAIN WHITELIST CHECKER (4-Layer Defense + Enhancements)
 # ============================================================
 
 def is_trusted_domain(domain):
@@ -194,6 +181,12 @@ def is_trusted_domain(domain):
         domain = domain.split(':')[0]
     if domain.startswith('www.'):
         domain = domain[4:]
+    
+    # ============================================================
+    # EXCEPTION: Whitelist your own backend
+    # ============================================================
+    if domain == 'tlhagiso-backend.vercel.app' or domain.endswith('.vercel.app'):
+        return True
     
     # LAYER 1: Exact Match
     if domain in TRUSTED_DOMAINS:
