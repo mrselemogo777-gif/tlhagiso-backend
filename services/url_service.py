@@ -273,7 +273,31 @@ def is_trusted_domain(domain):
 class URLService:
     def __init__(self):
         self.model = URLModel()
-        with open('/home/cheezboi/models/url_features.json', 'r') as f:
+                # Try multiple paths for the features file
+        feature_paths = [
+            '/home/cheezboi/models/url_features.json',
+            'models/url_features.json',
+            '../models/url_features.json',
+            os.path.join(os.path.dirname(__file__), '../models/url_features.json')
+        ]
+        features_loaded = False
+        for path in feature_paths:
+            try:
+                with open(path, 'r') as f:
+                    self.features = json.load(f)
+                print(f"   URL features loaded from: {path}")
+                features_loaded = True
+                break
+            except:
+                continue
+        if not features_loaded:
+            print("   WARNING: url_features.json not found, using default features")
+            self.features = ['url_len', 'dot_cnt', 'slash_cnt', 'dash_cnt', 
+                           'under_cnt', 'digit_cnt', 'special_cnt', 'is_https',
+                           'eq_cnt', 'qm_cnt', 'amp_cnt', 'letter_cnt',
+                           'dom_len', 'subdom_cnt', 'tld_len', 'is_ip',
+                           'letter_ratio', 'digit_ratio', 'spec_ratio',
+                           'path_len', 'query_len', 'entropy']
             self.features = json.load(f)
         print(f"   URL features loaded: {len(self.features)} features")
         print(f"   L1 Trusted Domains: {len(TRUSTED_DOMAINS)}")
