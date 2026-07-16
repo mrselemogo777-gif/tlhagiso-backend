@@ -320,6 +320,9 @@ class URLService:
     
     def _is_whitelisted(self, url):
         try:
+            # Remove trailing slash for consistent detection
+            if url and url.endswith('/'):
+                url = url[:-1]
             parsed = urlparse(url)
             domain = parsed.netloc.lower()
             if domain.startswith("www."):
