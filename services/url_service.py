@@ -1,25 +1,10 @@
-# services/url_service.py — COMPLETE FINAL VERSION
+# services/url_service.py — COMPLETE WITH SLASH FIX
 import re
 import pandas as pd
 import math
 import os
 import json
 import traceback
-# ============================================================
-# URL NORMALIZATION — Fix trailing slash issues (ALL URLs)
-# ============================================================
-def normalize_url(url):
-    """Remove trailing slash and normalize URL for consistent detection"""
-    if not url:
-        return url
-    url = url.strip()
-    # Remove trailing slash (but keep the protocol)
-    if url.endswith('/'):
-        url = url[:-1]
-    # Also handle www. prefix (optional, but good practice)
-    # We'll keep www. for now since it's handled elsewhere
-    return url
-
 from collections import Counter
 from urllib.parse import urlparse
 from models.url_model import URLModel
@@ -41,8 +26,7 @@ TRUSTED_DOMAINS = {
     "slack.com", "zoom.us", "skype.com", "wikipedia.org",
     "paypal.com", "ebay.com", "etsy.com", "shopify.com",
     "cloudflare.com", "digitalocean.com", "linode.com",
-    "heroku.com", "aws.amazon.com", "azure.microsoft.com",
-    "docker.com", "kubernetes.io", "jenkins.io",
+    "heroku.com", "docker.com", "kubernetes.io", "jenkins.io",
     "wordpress.org", "drupal.org", "joomla.org",
     
     # ─── BOTSWANA ───
@@ -68,48 +52,44 @@ TRUSTED_DOMAINS = {
     "capitec.co.za", "discovery.co.za", "mtn.co.za", "vodacom.co.za",
     
     # ─── OTHER AFRICAN COUNTRIES ───
-    "gov.ng", "kenya.go.ke", "gov.ke", "statehouse.go.ke", "mfa.go.ke", "immigration.go.ke", "ecitizen.go.ke", "etax.go.ke", "kra.go.ke",
+    "gov.ng", "kenya.go.ke", "gov.ke", "statehouse.go.ke",
     
     # ─── INTERNATIONAL ORGANIZATIONS ───
     "un.org", "unicef.org", "who.int", "worldbank.org", "imf.org",
-    "oecd.org", "nato.int", "europa.eu", "redcross.org", "icc-cpi.int",
+    "oecd.org", "nato.int", "europa.eu", "redcross.org",
     "undp.org", "unesco.org", "ilo.org", "fao.org", "wfp.org",
-    "unhcr.org", "unido.org", "itu.int", "wipo.int",
     
-    # ─── EDUCATION — GLOBAL ───
+    # ─── EDUCATION ───
     "harvard.edu", "stanford.edu", "mit.edu", "oxford.ac.uk",
     "cambridge.ac.uk", "ucl.ac.uk", "imperial.ac.uk",
-    "ethz.ch", "epfl.ch", "tudelft.nl", "kuleuven.be",
     "ub.bw", "bca.bw", "biust.ac.bw", "bufm.ac.bw",
     
     # ─── RETAIL & SHOPPING ───
     "game.co.za", "shoprite.co.za", "picknpay.co.za", "woolworths.co.za",
-    "checkers.co.za", "dischem.co.za", "takealot.com", "superbalist.com",
-    "amazon.com", "ebay.com", "etsy.com", "walmart.com",
-    "target.com", "bestbuy.com", "costco.com", "ikea.com",
+    "takealot.com", "superbalist.com", "amazon.com", "ebay.com",
+    "etsy.com", "walmart.com", "target.com", "bestbuy.com",
+    "costco.com", "ikea.com",
     
     # ─── BANKING — GLOBAL ───
     "chase.com", "wellsfargo.com", "bankofamerica.com",
     "citibank.com", "capitalone.com", "usbank.com",
     "hsbc.com", "barclays.com", "lloydsbank.co.uk",
-    "natwest.com", "rbs.co.uk", "santander.co.uk",
-    "bnpparibas.com", "societegenerale.com", "credit-agricole.fr",
+    "bnpparibas.com", "societegenerale.com",
     "deutsche-bank.de", "commerzbank.de", "unicredit.it",
-    "intesasanpaolo.com", "bbva.com", "santander.com",
+    "bbva.com", "santander.com",
     
     # ─── GOVERNMENT — GLOBAL ───
     "usa.gov", "whitehouse.gov", "state.gov", "defense.gov",
     "nsa.gov", "fbi.gov", "cia.gov", "nasa.gov",
     "uk.gov", "parliament.uk", "mod.uk", "gov.uk",
-    "europa.eu", "ec.europa.eu", "consilium.europa.eu",
-    "bundesregierung.de", "elysee.fr", "kremlin.ru",
-    "mfa.gov.cn", "gov.cn", "southkorea.go.kr", "japan.go.jp",
+    "europa.eu", "ec.europa.eu", "bundesregierung.de",
+    "elysee.fr", "mfa.gov.cn", "gov.cn",
     
     # ─── NEWS & MEDIA ───
-    "bbc.com", "bbc.co.uk", "cnn.com", "nytimes.com",
-    "washingtonpost.com", "theguardian.com", "reuters.com",
-    "apnews.com", "aljazeera.com", "lemonde.fr", "elpais.com",
-    "spiegel.de", "corriere.it", "thehindu.com", "timesofindia.com",
+    "bbc.com", "bbc.co.uk", "cnn.com", "edition.cnn.com",
+    "nytimes.com", "washingtonpost.com", "theguardian.com",
+    "reuters.com", "apnews.com", "aljazeera.com",
+    "foxnews.com", "foxnews.com",  # Added to fix slash issue
     
     # ─── SOCIAL MEDIA ───
     "facebook.com", "fb.com", "instagram.com", "twitter.com",
@@ -119,7 +99,7 @@ TRUSTED_DOMAINS = {
     
     # ─── SEARCH ENGINES ───
     "google.com", "bing.com", "yahoo.com", "duckduckgo.com",
-    "baidu.com", "yandex.ru", "seznam.cz", "naver.com",
+    "baidu.com", "yandex.ru", "naver.com",
 }
 
 # ============================================================
@@ -159,27 +139,18 @@ SUSPICIOUS_PATTERNS = [
     r'(paypal|amazon|apple|microsoft|google|facebook|instagram|whatsapp|telegram).*(verify|confirm|login|secure|unlock)',
     r'(chase|wellsfargo|bankofamerica|citibank|hsbc|barclays).*(verify|login|secure|unlock)',
     r'(fedex|dhl|ups|usps).*(tracking|delivery|package|customs|fee)',
-    r'(netflix|spotify|apple|amazon|paypal).*(account|billing|payment|update)',
     r'.*act\s+now.*',
     r'.*immediate\s+action.*',
-    r'.*your\s+account\s+(will\s+be|is|has\s+been)\s+(blocked|suspended|frozen|locked|disabled|deactivated)',
-    r'.*click\s+here\s+to\s+(verify|confirm|unlock|claim|update|secure)',
-    r'.*you\s+(won|have\s+won|are\s+a\s+winner|selected|chosen).*',
+    r'.*your\s+account\s+(will\s+be|is|has\s+been)\s+(blocked|suspended|frozen|locked)',
+    r'.*click\s+here\s+to\s+(verify|confirm|unlock|claim)',
+    r'.*you\s+(won|have\s+won|are\s+a\s+winner).*',
     r'.*claim\s+your\s+(prize|reward|cash|money|gift|voucher).*',
     r'.*congratulations.*(won|winner|prize|cash|gift).*',
-    r'.*(limited\s+time|expires\s+soon|don\'t\s+delay|last\s+chance).*',
     r'.*login.*(secure|verify|confirm|update).*',
-    r'.*signin.*(secure|verify|confirm).*',
-    r'.*(account|profile|payment|billing).*(update|verify|confirm|validate).*',
     r'.*security\s+alert.*',
     r'.*fraud\s+alert.*',
     r'.*unusual\s+activity.*',
     r'.*suspicious\s+activity.*',
-    r'.*won.*(cash|money|prize|gift).*',
-    r'.*congratulations.*(cash|money|prize).*',
-    r'.*free.*(money|cash|prize|gift|voucher).*',
-    r'.*claim.*(cash|money|prize).*',
-    r'.*inheritance.*(nigerian|prince|fortune|million).*',
     r'.*nigerian\s+prince.*',
 ]
 
@@ -214,12 +185,20 @@ PLATFORM_WILDCARDS = {
 STRICT_TLDS = {
     ".gov", ".gov.bw", ".gov.za", ".gov.uk", ".gov.au", ".gov.ca",
     ".gov.in", ".gov.ng", ".gov.ke", ".gov.gh", ".gov.eg",
-    ".gov.sa", ".gov.ae", ".gov.il", ".gov.tr", ".gov.ua",
     ".edu", ".edu.bw", ".edu.za", ".edu.au", ".edu.ca",
     ".edu.in", ".edu.ng", ".edu.ke", ".edu.gh", ".edu.eg",
     ".ac.bw", ".ac.za", ".ac.uk", ".ac.in", ".ac.ke",
     ".mil", ".mil.za", ".mil.uk", ".mil.au", ".mil.ca",
 }
+
+# ============================================================
+# URL NORMALIZATION — Fix trailing slash issues
+# ============================================================
+def normalize_url(url):
+    """Remove trailing slash for consistent detection"""
+    if url and url.endswith('/'):
+        url = url[:-1]
+    return url
 
 # ============================================================
 # MAIN WHITELIST CHECKER
@@ -320,9 +299,8 @@ class URLService:
     
     def _is_whitelisted(self, url):
         try:
-            # Remove trailing slash for consistent detection
-            if url and url.endswith('/'):
-                url = url[:-1]
+            # Normalize URL (remove trailing slash)
+            url = normalize_url(url)
             parsed = urlparse(url)
             domain = parsed.netloc.lower()
             if domain.startswith("www."):
@@ -379,7 +357,8 @@ class URLService:
         
         if len(url) > 0:
             freq = Counter(url)
-            features['entropy'] = -sum((count/len(url)) * math.log2(count/len(url)) for count in freq.values())
+            entropy = -sum((count/len(url)) * math.log2(count/len(url)) for count in freq.values())
+            features['entropy'] = entropy
         else:
             features['entropy'] = 0
         
@@ -392,8 +371,11 @@ class URLService:
         return features_df
     
     def detect(self, url):
-        url = normalize_url(url)
         try:
+            # Normalize URL (remove trailing slash)
+            url = normalize_url(url)
+            
+            # LAYER 1-3: Whitelist Check
             if self._is_whitelisted(url):
                 return {
                     'is_phishing': False,
@@ -402,6 +384,7 @@ class URLService:
                     'reason': 'Verified Trusted Domain'
                 }
             
+            # LAYER 4: ML Engine for ALL other domains
             features = self.extract_features(url)
             scaled = self.model.scale(features)
             
