@@ -5,6 +5,21 @@ import math
 import os
 import json
 import traceback
+# ============================================================
+# URL NORMALIZATION — Fix trailing slash issues (ALL URLs)
+# ============================================================
+def normalize_url(url):
+    """Remove trailing slash and normalize URL for consistent detection"""
+    if not url:
+        return url
+    url = url.strip()
+    # Remove trailing slash (but keep the protocol)
+    if url.endswith('/'):
+        url = url[:-1]
+    # Also handle www. prefix (optional, but good practice)
+    # We'll keep www. for now since it's handled elsewhere
+    return url
+
 from collections import Counter
 from urllib.parse import urlparse
 from models.url_model import URLModel
@@ -374,6 +389,7 @@ class URLService:
         return features_df
     
     def detect(self, url):
+        url = normalize_url(url)
         try:
             if self._is_whitelisted(url):
                 return {
