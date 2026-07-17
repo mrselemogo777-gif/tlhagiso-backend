@@ -16,9 +16,10 @@
   "letter_ratio",
   "digit_ratio",
   "spec_ratio",
-  "is_https",
   "slash_cnt",
   "entropy",
   "path_len",
-  "query_len"
+  "query_len",
+  "is_http",
+  "missing_https"
 ]
