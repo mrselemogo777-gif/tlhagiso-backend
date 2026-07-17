@@ -136,6 +136,18 @@ SUSPICIOUS_KEYWORDS = [
 ]
 
 SUSPICIOUS_PATTERNS = [
+    # ─── PIRACY SITE PATTERNS ───
+    r'123movies',
+    r'fmovies',
+    r'soap2day',
+    r'putlocker',
+    r'gomovies',
+    r'watchseries',
+    r'moviebox',
+    r'thepiratebay',
+    r'yts',
+    r'rarbg',
+
     r'(mascom|orange|fnb|btc|stanbic|bankofbotswana|bofinet|burs|dhl|choppies).*(promo|free|rewards|cash|prize|verify|login|claim)',
     r'(fnb|stanbic|bank).*(login|secure|verify|blocked|suspended)',
     r'.*act\s+now.*',
