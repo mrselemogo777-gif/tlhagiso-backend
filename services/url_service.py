@@ -1,4 +1,4 @@
-# services/url_service.py — COMPLETE WITH SLASH FIX
+# services/url_service.py
 import re
 import pandas as pd
 import math
@@ -7,13 +7,14 @@ import json
 import traceback
 from collections import Counter
 from urllib.parse import urlparse
+from config import Config
 from models.url_model import URLModel
 
 # ============================================================
-# LAYER 1: EXACT MATCHES — WORLDWIDE + BOTSWANA
+# LAYER 1: EXACT MATCHES (Verified Trusted Domains)
 # ============================================================
 TRUSTED_DOMAINS = {
-    # ─── GLOBAL TECH ───
+    # GLOBAL TECH
     "google.com", "gmail.com", "youtube.com", "drive.google.com",
     "docs.google.com", "mail.google.com", "calendar.google.com",
     "maps.google.com", "analytics.google.com", "googleapis.com",
@@ -24,12 +25,8 @@ TRUSTED_DOMAINS = {
     "facebook.com", "fb.com", "instagram.com", "twitter.com", "x.com",
     "linkedin.com", "whatsapp.com", "telegram.org", "discord.com",
     "slack.com", "zoom.us", "skype.com", "wikipedia.org",
-    "paypal.com", "ebay.com", "etsy.com", "shopify.com",
-    "cloudflare.com", "digitalocean.com", "linode.com",
-    "heroku.com", "docker.com", "kubernetes.io", "jenkins.io",
-    "wordpress.org", "drupal.org", "joomla.org",
     
-    # ─── BOTSWANA ───
+    # BOTSWANA TRUSTED DOMAINS
     "gov.bw", "parliament.gov.bw", "presidency.gov.bw",
     "justice.gov.bw", "health.gov.bw", "education.gov.bw",
     "transport.gov.bw", "agriculture.gov.bw", "lands.gov.bw",
@@ -43,83 +40,78 @@ TRUSTED_DOMAINS = {
     "barclays.co.bw", "abcbank.co.bw", "debswana.com", "debswana.bw",
     "ub.bw", "bca.bw", "biust.ac.bw", "bufm.ac.bw",
     "dailynews.gov.bw", "mmegi.bw", "airbotswana.co.bw",
-    "mackair.co.bw", "choppies.co.bw",
+    "mackair.co.bw", "choppies.co.bw", "game.co.za", "shoprite.co.za",
+    "picknpay.co.za", "woolworths.co.za",
     
-    # ─── SOUTH AFRICA ───
+    # SOUTH AFRICA TRUSTED
     "gov.za", "parliament.gov.za", "saps.gov.za", "sars.gov.za",
     "eskom.co.za", "transnet.co.za", "telkom.co.za",
     "fnb.co.za", "standardbank.co.za", "absa.co.za", "nedbank.co.za",
     "capitec.co.za", "discovery.co.za", "mtn.co.za", "vodacom.co.za",
     
-    # ─── OTHER AFRICAN COUNTRIES ───
-    "gov.ng", "kenya.go.ke", "gov.ke", "statehouse.go.ke",
-    
-    # ─── INTERNATIONAL ORGANIZATIONS ───
+    # INTERNATIONAL
     "un.org", "unicef.org", "who.int", "worldbank.org", "imf.org",
-    "oecd.org", "nato.int", "europa.eu", "redcross.org",
-    "undp.org", "unesco.org", "ilo.org", "fao.org", "wfp.org",
-    
-    # ─── EDUCATION ───
-    "harvard.edu", "stanford.edu", "mit.edu", "oxford.ac.uk",
-    "cambridge.ac.uk", "ucl.ac.uk", "imperial.ac.uk",
-    "ub.bw", "bca.bw", "biust.ac.bw", "bufm.ac.bw",
-    
-    # ─── RETAIL & SHOPPING ───
-    "game.co.za", "shoprite.co.za", "picknpay.co.za", "woolworths.co.za",
-    "takealot.com", "superbalist.com", "amazon.com", "ebay.com",
-    "etsy.com", "walmart.com", "target.com", "bestbuy.com",
-    "costco.com", "ikea.com",
-    
-    # ─── BANKING — GLOBAL ───
-    "chase.com", "wellsfargo.com", "bankofamerica.com",
-    "citibank.com", "capitalone.com", "usbank.com",
-    "hsbc.com", "barclays.com", "lloydsbank.co.uk",
-    "bnpparibas.com", "societegenerale.com",
-    "deutsche-bank.de", "commerzbank.de", "unicredit.it",
-    "bbva.com", "santander.com",
-    
-    # ─── GOVERNMENT — GLOBAL ───
-    "usa.gov", "whitehouse.gov", "state.gov", "defense.gov",
-    "nsa.gov", "fbi.gov", "cia.gov", "nasa.gov",
-    "uk.gov", "parliament.uk", "mod.uk", "gov.uk",
-    "europa.eu", "ec.europa.eu", "bundesregierung.de",
-    "elysee.fr", "mfa.gov.cn", "gov.cn",
-    
-    # ─── NEWS & MEDIA ───
-    "bbc.com", "bbc.co.uk", "cnn.com", "edition.cnn.com",
-    "nytimes.com", "washingtonpost.com", "theguardian.com",
-    "reuters.com", "apnews.com", "aljazeera.com",
-    "foxnews.com", "foxnews.com",  # Added to fix slash issue
-    
-    # ─── SOCIAL MEDIA ───
-    "facebook.com", "fb.com", "instagram.com", "twitter.com",
-    "x.com", "linkedin.com", "whatsapp.com", "telegram.org",
-    "discord.com", "reddit.com", "tumblr.com", "pinterest.com",
-    "snapchat.com", "tiktok.com",
-    
-    # ─── SEARCH ENGINES ───
-    "google.com", "bing.com", "yahoo.com", "duckduckgo.com",
-    "baidu.com", "yandex.ru", "naver.com",
+    "oecd.org", "nato.int", "europa.eu", "redcross.org", "icc-cpi.int",
 }
 
 # ============================================================
 # LAYER 1.5: BOTSWANA BRAND PROTECTION
 # ============================================================
 BOTSWANA_BRANDS = {
-    "mascom": {"trusted": ["mascom.bw"], "suspicious": ["rewards", "promo", "free", "verify", "login", "claim", "winner", "cash", "prize"]},
-    "orange": {"trusted": ["orange.co.bw"], "suspicious": ["promo", "free", "rewards", "claim", "winner", "cash", "prize", "verify"]},
-    "fnb": {"trusted": ["fnb.co.bw", "fnb.co.za"], "suspicious": ["verify", "secure", "unlock", "alert", "login", "blocked", "suspended", "fraud"]},
-    "btc": {"trusted": ["btc.co.bw"], "suspicious": ["payment", "renew", "disconnect", "verify", "fees", "outstanding", "line"]},
-    "stanbic": {"trusted": ["stanbic.co.bw"], "suspicious": ["verify", "secure", "unlock", "alert", "login", "blocked"]},
-    "bank of botswana": {"trusted": ["bankofbotswana.bw", "bob.bw"], "suspicious": ["frozen", "verify", "secure", "login", "blocked", "suspended"]},
-    "bofinet": {"trusted": ["bofinet.co.bw"], "suspicious": ["tax", "payment", "submission", "filing", "deadline", "refund"]},
-    "burs": {"trusted": ["burs.org.bw"], "suspicious": ["tax", "refund", "return", "submission", "deadline", "payment"]},
-    "dhl": {"trusted": ["dhl.co.bw", "dhl.com"], "suspicious": ["tracking", "delivery", "package", "arrived", "shipped", "customs", "fee"]},
-    "choppies": {"trusted": ["choppies.co.bw"], "suspicious": ["voucher", "gift", "winner", "cash", "prize", "reward"]}
+    "mascom": {
+        "trusted": ["mascom.bw"],
+        "keywords": ["mascom", "mascom.bw"],
+        "suspicious_keywords": ["rewards", "promo", "free", "verify", "login", "claim", "winner", "cash", "prize"]
+    },
+    "orange": {
+        "trusted": ["orange.co.bw"],
+        "keywords": ["orange", "orange.co.bw"],
+        "suspicious_keywords": ["promo", "free", "rewards", "claim", "winner", "cash", "prize", "verify"]
+    },
+    "fnb": {
+        "trusted": ["fnb.co.bw", "fnb.co.za"],
+        "keywords": ["fnb", "fnb.co.bw", "fnb.co.za"],
+        "suspicious_keywords": ["verify", "secure", "unlock", "alert", "login", "blocked", "suspended", "fraud"]
+    },
+    "btc": {
+        "trusted": ["btc.co.bw"],
+        "keywords": ["btc", "btc.co.bw"],
+        "suspicious_keywords": ["payment", "renew", "disconnect", "verify", "fees", "outstanding", "line"]
+    },
+    "stanbic": {
+        "trusted": ["stanbic.co.bw"],
+        "keywords": ["stanbic", "stanbic.co.bw"],
+        "suspicious_keywords": ["verify", "secure", "unlock", "alert", "login", "blocked"]
+    },
+    "bank of botswana": {
+        "trusted": ["bankofbotswana.bw", "bob.bw"],
+        "keywords": ["bank of botswana", "bankofbotswana.bw", "bob.bw"],
+        "suspicious_keywords": ["frozen", "verify", "secure", "login", "blocked", "suspended"]
+    },
+    "bofinet": {
+        "trusted": ["bofinet.co.bw"],
+        "keywords": ["bofinet", "bofinet.co.bw"],
+        "suspicious_keywords": ["tax", "payment", "submission", "filing", "deadline", "refund"]
+    },
+    "burs": {
+        "trusted": ["burs.org.bw"],
+        "keywords": ["burs", "burs.org.bw"],
+        "suspicious_keywords": ["tax", "refund", "return", "submission", "deadline", "payment"]
+    },
+    "dhl": {
+        "trusted": ["dhl.co.bw", "dhl.com"],
+        "keywords": ["dhl", "dhl.co.bw", "dhl.com"],
+        "suspicious_keywords": ["tracking", "delivery", "package", "arrived", "shipped", "customs", "fee"]
+    },
+    "choppies": {
+        "trusted": ["choppies.co.bw"],
+        "keywords": ["choppies", "choppies.co.bw"],
+        "suspicious_keywords": ["voucher", "gift", "winner", "cash", "prize", "reward"]
+    }
 }
 
 # ============================================================
-# LAYER 1.5: SUSPICIOUS PATTERNS — WORLDWIDE
+# LAYER 1.5: SUSPICIOUS PATTERNS
 # ============================================================
 SUSPICIOUS_TLDS = {
     '.xyz', '.top', '.club', '.online', '.info', '.site',
@@ -127,35 +119,41 @@ SUSPICIOUS_TLDS = {
     '.cc', '.co', '.io', '.bz', '.name', '.work', '.click',
     '.link', '.press', '.store', '.shop', '.tech', '.cloud',
     '.host', '.web', '.app', '.dev', '.blog', '.site',
-    '.gq', '.eu', '.su', '.by', '.kz', '.uz',
-    '.win', '.bid', '.date', '.download', '.review', '.trade',
-    '.men', '.party', '.loan', '.racing', '.accountant', '.science',
-    '.website', '.space', '.tech', '.store', '.shop', '.online',
+    '.gq', '.eu', '.su', '.by', '.kz', '.uz'
 }
+
+SUSPICIOUS_KEYWORDS = [
+    "verify", "validate", "authenticate", "confirm", "secure",
+    "protect", "login", "signin", "update", "upgrade", "renew",
+    "restore", "urgent", "immediate", "alert", "warning",
+    "blocked", "suspended", "frozen", "locked", "deactivated",
+    "terminated", "cancelled", "unauthorized", "suspicious",
+    "fraud", "free", "won", "winner", "prize", "reward",
+    "claim", "cash", "money", "pula", "promo", "offer",
+    "discount", "gift", "click", "here", "link", "connect",
+    "access", "account", "profile", "settings", "help",
+    "support", "admin", "service"
+]
 
 SUSPICIOUS_PATTERNS = [
     r'(mascom|orange|fnb|btc|stanbic|bankofbotswana|bofinet|burs|dhl|choppies).*(promo|free|rewards|cash|prize|verify|login|claim)',
     r'(fnb|stanbic|bank).*(login|secure|verify|blocked|suspended)',
-    r'(paypal|amazon|apple|microsoft|google|facebook|instagram|whatsapp|telegram).*(verify|confirm|login|secure|unlock)',
-    r'(chase|wellsfargo|bankofamerica|citibank|hsbc|barclays).*(verify|login|secure|unlock)',
-    r'(fedex|dhl|ups|usps).*(tracking|delivery|package|customs|fee)',
     r'.*act\s+now.*',
     r'.*immediate\s+action.*',
     r'.*your\s+account\s+(will\s+be|is|has\s+been)\s+(blocked|suspended|frozen|locked)',
     r'.*click\s+here\s+to\s+(verify|confirm|unlock|claim)',
     r'.*you\s+(won|have\s+won|are\s+a\s+winner).*',
-    r'.*claim\s+your\s+(prize|reward|cash|money|gift|voucher).*',
-    r'.*congratulations.*(won|winner|prize|cash|gift).*',
-    r'.*login.*(secure|verify|confirm|update).*',
+    r'.*claim\s+your\s+(prize|reward|cash|money).*',
+    r'.*congratulations.*(won|winner|prize|cash).*',
+    r'.*login.*(secure|verify).*',
+    r'.*signin.*(secure|verify).*',
+    r'.*(account|profile|payment).*(update|verify|confirm).*',
     r'.*security\s+alert.*',
     r'.*fraud\s+alert.*',
-    r'.*unusual\s+activity.*',
-    r'.*suspicious\s+activity.*',
-    r'.*nigerian\s+prince.*',
 ]
 
 # ============================================================
-# LAYER 2: PLATFORM WILDCARDS — WORLDWIDE
+# LAYER 2: PLATFORM WILDCARDS
 # ============================================================
 PLATFORM_WILDCARDS = {
     "github.io", "vercel.app", "netlify.app", "pages.dev",
@@ -170,41 +168,28 @@ PLATFORM_WILDCARDS = {
     "cloudflare.dev", "workers.dev", "raw.githubusercontent.com",
     "blob.core.windows.net", "storage.googleapis.com",
     "firebasestorage.googleapis.com",
-    "github.dev", "gitpod.io", "codespaces.com",
-    "pythonanywhere.com", "replit.com",
-    "glitch.me", "surge.sh", "neocities.org",
-    "netlify.com", "vercel.com", "cloudflare.com",
-    "page.dev", "workers.dev", "popsy.co",
-    "webflow.io", "editorx.io", "duda.co",
-    "wixsite.com", "godaddysites.com", "weebly.com",
 }
 
 # ============================================================
-# LAYER 3: STRICT INSTITUTIONAL TLDs — WORLDWIDE
+# LAYER 3: STRICT INSTITUTIONAL TLDs
 # ============================================================
 STRICT_TLDS = {
-    ".gov", ".gov.bw", ".gov.za", ".gov.uk", ".gov.au", ".gov.ca",
-    ".gov.in", ".gov.ng", ".gov.ke", ".gov.gh", ".gov.eg",
-    ".edu", ".edu.bw", ".edu.za", ".edu.au", ".edu.ca",
-    ".edu.in", ".edu.ng", ".edu.ke", ".edu.gh", ".edu.eg",
-    ".ac.bw", ".ac.za", ".ac.uk", ".ac.in", ".ac.ke",
-    ".mil", ".mil.za", ".mil.uk", ".mil.au", ".mil.ca",
+    ".gov", ".gov.bw", ".gov.za", ".gov.uk", ".edu", ".ac.bw",
+    ".ac.za", ".ac.uk", ".edu.za", ".mil",
 }
-
-# ============================================================
-# URL NORMALIZATION — Fix trailing slash issues
-# ============================================================
-def normalize_url(url):
-    """Remove trailing slash for consistent detection"""
-    if url and url.endswith('/'):
-        url = url[:-1]
-    return url
 
 # ============================================================
 # MAIN WHITELIST CHECKER
 # ============================================================
 
 def is_trusted_domain(domain):
+
+    # ─── PIRACY SITE DETECTION ───
+    piracy_keywords = ['123movies', 'fmovies', 'soap2day', 'putlocker', 'gomovies', 
+                       'watchseries', 'moviebox', 'thepiratebay', 'yts', 'rarbg']
+    if any(kw in domain for kw in piracy_keywords):
+        return False  # Mark as phishing (RED)
+
     domain = domain.lower().strip()
     
     if domain.startswith('http://') or domain.startswith('https://'):
@@ -217,36 +202,43 @@ def is_trusted_domain(domain):
     if domain.startswith('www.'):
         domain = domain[4:]
     
-    # EXCEPTION: Whitelist your own backend
-    if domain.endswith('.vercel.app'):
-        return True
-    
     # LAYER 1: Exact Match
     if domain in TRUSTED_DOMAINS:
         return True
     
     # LAYER 1.5: Botswana Brand Protection
     for brand, data in BOTSWANA_BRANDS.items():
-        if brand in domain:
-            if any(domain == trusted or domain.endswith('.' + trusted) for trusted in data["trusted"]):
-                return True
-            if any(sus in domain for sus in data["suspicious"]):
-                return False
+        brand_found = False
+        for keyword in data["keywords"]:
+            if keyword in domain:
+                brand_found = True
+                break
+        if brand_found:
+            for trusted in data["trusted"]:
+                if domain == trusted or domain.endswith('.' + trusted):
+                    return True
+            for sus in data["suspicious_keywords"]:
+                if sus in domain:
+                    return False
     
     # LAYER 1.5: Phishing Patterns
-    if any(re.search(pattern, domain, re.IGNORECASE) for pattern in SUSPICIOUS_PATTERNS):
-        return False
+    for pattern in SUSPICIOUS_PATTERNS:
+        if re.search(pattern, domain, re.IGNORECASE):
+            return False
     
-    if any(domain.endswith(tld) for tld in SUSPICIOUS_TLDS):
-        return False
+    for tld in SUSPICIOUS_TLDS:
+        if domain.endswith(tld):
+            return False
     
     # LAYER 2: Platform Wildcards
-    if any(domain == wc or domain.endswith('.' + wc) for wc in PLATFORM_WILDCARDS):
-        return True
+    for wildcard in PLATFORM_WILDCARDS:
+        if domain == wildcard or domain.endswith('.' + wildcard):
+            return True
     
     # LAYER 3: Strict TLDs
-    if any(domain.endswith(tld) for tld in STRICT_TLDS):
-        return True
+    for tld in STRICT_TLDS:
+        if domain.endswith(tld):
+            return True
     
     # LAYER 4: ML Engine
     return False
@@ -259,6 +251,7 @@ class URLService:
     def __init__(self):
         self.model = URLModel()
         
+        # Flexible path loading for features file
         feature_paths = [
             '/home/cheezboi/models/url_features.json',
             'models/url_features.json',
@@ -299,8 +292,6 @@ class URLService:
     
     def _is_whitelisted(self, url):
         try:
-            # Normalize URL (remove trailing slash)
-            url = normalize_url(url)
             parsed = urlparse(url)
             domain = parsed.netloc.lower()
             if domain.startswith("www."):
@@ -335,7 +326,10 @@ class URLService:
             features['dom_len'] = len(parts[-1]) if parts else 0
             features['subdom_cnt'] = max(0, len(parts) - 2)
             features['tld_len'] = len(parts[-1]) if len(parts) > 1 else 0
-            features['is_ip'] = 1 if parts and re.match(r'^\d+\.\d+\.\d+\.\d+$', parts[0]) else 0
+            if parts and re.match(r'^\d+\.\d+\.\d+\.\d+$', parts[0]):
+                features['is_ip'] = 1
+            else:
+                features['is_ip'] = 0
         except:
             features['dom_len'] = 0
             features['subdom_cnt'] = 0
@@ -372,10 +366,6 @@ class URLService:
     
     def detect(self, url):
         try:
-            # Normalize URL (remove trailing slash)
-            url = normalize_url(url)
-            
-            # LAYER 1-3: Whitelist Check
             if self._is_whitelisted(url):
                 return {
                     'is_phishing': False,
@@ -384,7 +374,6 @@ class URLService:
                     'reason': 'Verified Trusted Domain'
                 }
             
-            # LAYER 4: ML Engine for ALL other domains
             features = self.extract_features(url)
             scaled = self.model.scale(features)
             
@@ -410,64 +399,3 @@ class URLService:
                 'result': 'error',
                 'error': str(e)
             }
-# FORCE REDEPLOY - Fri 17 Jul 2026 01:37:32 CAT
-
-# ─── PIRACY SITE DETECTION ───
-SUSPICIOUS_KEYWORDS = SUSPICIOUS_KEYWORDS + [
-    "movie", "movies", "watch", "stream", "free", "download",
-    "tv", "series", "episode", "hd", "4k", "1080p",
-    "putlocker", "123movies", "fmovies", "soap2day",
-    "gomovies", "watchseries", "moviebox", "cinema hd",
-    "showbox", "popcorn time", "the pirate bay"
-]
-
-SUSPICIOUS_TLDS = SUSPICIOUS_TLDS + {
-    ".ph", ".to", ".cc", ".run", ".io",
-    ".bz", ".ws", ".info", ".site", ".online",
-    ".live", ".fun", ".click", ".link",
-}
-
-# ─── PIRACY SITE PATTERNS ───
-SUSPICIOUS_PATTERNS = SUSPICIOUS_PATTERNS + [
-    r'123movies',
-    r'fmovies',
-    r'soap2day',
-    r'putlocker',
-    r'gomovies',
-    r'watchseries',
-    r'moviebox',
-    r'watch.*free',
-    r'stream.*free',
-    r'free.*movies',
-    r'movies.*online',
-]
-
-# ─── PIRACY SITE PATTERNS ───
-# Add these to your existing SUSPICIOUS_PATTERNS list
-# If the list is called something else, adjust accordingly
-SUSPICIOUS_PATTERNS.extend([
-    r'123movies',
-    r'fmovies',
-    r'soap2day',
-    r'putlocker',
-    r'gomovies',
-    r'watchseries',
-    r'moviebox',
-    r'watch.*free',
-    r'stream.*free',
-    r'free.*movies',
-    r'movies.*online',
-])
-
-# ─── PIRACY SITE DETECTION IN is_trusted_domain ───
-# Add this check at the beginning of the function
-def is_trusted_domain(domain):
-    domain = domain.lower().strip()
-    
-    # Piracy site detection
-    piracy_keywords = ['123movies', 'fmovies', 'soap2day', 'putlocker', 'gomovies', 
-                       'watchseries', 'moviebox', 'watch-free', 'stream-free']
-    if any(keyword in domain for keyword in piracy_keywords):
-        return False  # Mark as phishing
-    
-    # ... rest of your existing code
