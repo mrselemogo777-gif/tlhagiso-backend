@@ -458,3 +458,16 @@ SUSPICIOUS_PATTERNS.extend([
     r'free.*movies',
     r'movies.*online',
 ])
+
+# ─── PIRACY SITE DETECTION IN is_trusted_domain ───
+# Add this check at the beginning of the function
+def is_trusted_domain(domain):
+    domain = domain.lower().strip()
+    
+    # Piracy site detection
+    piracy_keywords = ['123movies', 'fmovies', 'soap2day', 'putlocker', 'gomovies', 
+                       'watchseries', 'moviebox', 'watch-free', 'stream-free']
+    if any(keyword in domain for keyword in piracy_keywords):
+        return False  # Mark as phishing
+    
+    # ... rest of your existing code
