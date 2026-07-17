@@ -254,6 +254,8 @@ def normalize_url(url):
 # ============================================================
 
 def is_trusted_domain(domain):
+    if domain in BLACKLISTED_DOMAINS:
+        return False
     domain = domain.lower().strip()
     
     if domain.startswith('http://') or domain.startswith('https://'):
@@ -266,9 +268,6 @@ def is_trusted_domain(domain):
     if domain.startswith('www.'):
         domain = domain[4:]
     
-    # ─── BLACKLIST CHECK ───
-    if domain in BLACKLISTED_DOMAINS:
-        return False
     
     # EXCEPTION: Whitelist your own backend
     if domain.endswith('.vercel.app'):
