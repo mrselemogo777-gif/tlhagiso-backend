@@ -169,6 +169,14 @@ SUSPICIOUS_TLDS = {
 }
 
 SUSPICIOUS_PATTERNS = [
+    r".*123movieszone.*",
+    r".*fmovies.*",
+    r".*soap2day.*",
+    r".*putlocker.*",
+    r".*gomovies.*",
+    r".*watchseries.*",
+    r".*moviebox.*",
+    r".*thepiratebay.*",
     r'(mascom|orange|fnb|btc|stanbic|bankofbotswana|bofinet|burs|dhl|choppies).*(promo|free|rewards|cash|prize|verify|login|claim)',
     r'(fnb|stanbic|bank).*(login|secure|verify|blocked|suspended)',
     r'(paypal|amazon|apple|microsoft|google|facebook|instagram|whatsapp|telegram).*(verify|confirm|login|secure|unlock)',
