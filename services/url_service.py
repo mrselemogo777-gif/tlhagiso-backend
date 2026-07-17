@@ -441,3 +441,20 @@ SUSPICIOUS_PATTERNS = SUSPICIOUS_PATTERNS + [
     r'free.*movies',
     r'movies.*online',
 ]
+
+# ─── PIRACY SITE PATTERNS ───
+# Add these to your existing SUSPICIOUS_PATTERNS list
+# If the list is called something else, adjust accordingly
+SUSPICIOUS_PATTERNS.extend([
+    r'123movies',
+    r'fmovies',
+    r'soap2day',
+    r'putlocker',
+    r'gomovies',
+    r'watchseries',
+    r'moviebox',
+    r'watch.*free',
+    r'stream.*free',
+    r'free.*movies',
+    r'movies.*online',
+])
