@@ -411,3 +411,33 @@ class URLService:
                 'error': str(e)
             }
 # FORCE REDEPLOY - Fri 17 Jul 2026 01:37:32 CAT
+
+# ─── PIRACY SITE DETECTION ───
+SUSPICIOUS_KEYWORDS = SUSPICIOUS_KEYWORDS + [
+    "movie", "movies", "watch", "stream", "free", "download",
+    "tv", "series", "episode", "hd", "4k", "1080p",
+    "putlocker", "123movies", "fmovies", "soap2day",
+    "gomovies", "watchseries", "moviebox", "cinema hd",
+    "showbox", "popcorn time", "the pirate bay"
+]
+
+SUSPICIOUS_TLDS = SUSPICIOUS_TLDS + {
+    ".ph", ".to", ".cc", ".run", ".io",
+    ".bz", ".ws", ".info", ".site", ".online",
+    ".live", ".fun", ".click", ".link",
+}
+
+# ─── PIRACY SITE PATTERNS ───
+SUSPICIOUS_PATTERNS = SUSPICIOUS_PATTERNS + [
+    r'123movies',
+    r'fmovies',
+    r'soap2day',
+    r'putlocker',
+    r'gomovies',
+    r'watchseries',
+    r'moviebox',
+    r'watch.*free',
+    r'stream.*free',
+    r'free.*movies',
+    r'movies.*online',
+]
