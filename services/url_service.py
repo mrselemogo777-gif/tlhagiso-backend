@@ -10,9 +10,9 @@ from urllib.parse import urlparse
 from models.url_model import URLModel
 import requests
 
-# ============================================================
+
 # LAYER 1: DIRECT TRUSTED WHITELIST (O(1) Search)
-# ============================================================
+
 TRUSTED_DOMAINS = {
     # GLOBAL TECH
     "google.com", "gmail.com", "youtube.com", "drive.google.com",
@@ -46,17 +46,17 @@ TRUSTED_DOMAINS = {
     "un.org", "unicef.org", "who.int", "worldbank.org", "imf.org",
     "oecd.org", "nato.int", "europa.eu", "redcross.org",
     
-    # NEWS & MEDIA (Prevent false positives)
+    # NEWS & MEDIA 
     "tmz.com", "www.tmz.com", "foxnews.com", "cnn.com", "edition.cnn.com",
     "bbc.com", "bbc.co.uk", "reuters.com", "apnews.com", "aljazeera.com",
     "nytimes.com", "washingtonpost.com", "theguardian.com",
 }
 
-# ============================================================
-# LAYER 2: LOCAL RISK BLACKLIST (with https:// and http://)
-# ============================================================
+
+# LAYER 2: LOCAL RISK BLACKLIST 
+
 BLACKLISTED_DOMAINS = {
-    # ─── STREAMING & PIRACY SITES ───
+    # STREAMING & PIRACY SITES 
     "https://123movieszone.online", "http://123movieszone.online",
     "https://123movies.to", "http://123movies.to",
     "https://123movies.org", "http://123movies.org",
@@ -108,7 +108,7 @@ BLACKLISTED_DOMAINS = {
     "https://hdmovies.to", "http://hdmovies.to",
     "https://4kmovies.to", "http://4kmovies.to",
     
-    # ─── GLOBAL PHISHING SITES ───
+    #  GLOBAL PHISHING SITES 
     "https://paypal-verify.com", "http://paypal-verify.com",
     "https://paypal-secure.com", "http://paypal-secure.com",
     "https://paypal-login.xyz", "http://paypal-login.xyz",
@@ -131,7 +131,7 @@ BLACKLISTED_DOMAINS = {
     "https://whatsapp-verify.com", "http://whatsapp-verify.com",
     "https://telegram-verify.com", "http://telegram-verify.com",
     
-    # ─── BANKING PHISHING ───
+    #  BANKING PHISHING 
     "https://chase-login.com", "http://chase-login.com",
     "https://chase-verify.com", "http://chase-verify.com",
     "https://bankofamerica-verify.com", "http://bankofamerica-verify.com",
@@ -143,7 +143,7 @@ BLACKLISTED_DOMAINS = {
     "https://natwest-verify.com", "http://natwest-verify.com",
     "https://santander-verify.com", "http://santander-verify.com",
     
-    # ─── BOTSWANA PHISHING SITES ───
+    #  BOTSWANA PHISHING SITES 
     "https://mascom-promo.com", "http://mascom-promo.com",
     "https://mascom-rewards.com", "http://mascom-rewards.com",
     "https://mascom-login.xyz", "http://mascom-login.xyz",
@@ -163,7 +163,7 @@ BLACKLISTED_DOMAINS = {
     "https://bofinet-payment.com", "http://bofinet-payment.com",
     "https://burs-refund.com", "http://burs-refund.com",
     
-    # ─── URL SHORTENERS ───
+    #  URL SHORTENERS 
     "https://bit.ly", "http://bit.ly",
     "https://tinyurl.com", "http://tinyurl.com",
     "https://adf.ly", "http://adf.ly",
@@ -176,9 +176,9 @@ BLACKLISTED_DOMAINS = {
     "https://linktr.ee", "http://linktr.ee",
 }
 
-# ============================================================
+
 # LAYER 3: GOOGLE SAFE BROWSING API
-# ============================================================
+
 GOOGLE_SAFE_BROWSING_KEY = os.environ.get('GOOGLE_SAFE_BROWSING_KEY', '')
 
 def check_google_safe_browsing(url):
@@ -213,9 +213,9 @@ def check_google_safe_browsing(url):
     except Exception as e:
         return False, f"Error: {str(e)}"
 
-# ============================================================
-# LAYER 4: SVM ML ENGINE (Zero-Day Trap)
-# ============================================================
+
+# LAYER 4: SVM ML ENGINE 
+
 PLATFORM_WILDCARDS = {
     "github.io", "vercel.app", "netlify.app", "pages.dev",
     "gitlab.io", "herokuapp.com", "azurewebsites.net", "cloudfront.net",
@@ -262,9 +262,9 @@ def is_trusted_domain(domain):
     
     return False
 
-# ============================================================
+
 # URL SERVICE CLASS
-# ============================================================
+
 
 class URLService:
     def __init__(self):
@@ -277,7 +277,7 @@ class URLService:
             'letter_ratio', 'digit_ratio', 'spec_ratio',
             'path_len', 'query_len', 'entropy'
         ]
-        print("🔐 Professional 5-Layer Hybrid Defense System Initialized")
+        print(" Professional 5-Layer Hybrid Defense System Initialized")
         print(f"   Layer 1: Whitelist ({len(TRUSTED_DOMAINS)} domains)")
         print(f"   Layer 2: Blacklist ({len(BLACKLISTED_DOMAINS)} domains)")
         print(f"   Layer 3: Google Safe Browsing API (Active)")
@@ -357,9 +357,9 @@ class URLService:
         try:
             url = normalize_url(url)
             
-            # ============================================================
+            
             # LAYER 1: DIRECT TRUSTED WHITELIST
-            # ============================================================
+            
             if self._is_whitelisted(url):
                 return {
                     'is_phishing': False,
@@ -376,9 +376,9 @@ class URLService:
             if ":" in domain:
                 domain = domain.split(":")[0]
             
-            # ============================================================
+            
             # LAYER 2: LOCAL RISK BLACKLIST
-            # ============================================================
+        
             # Check against BOTH domain and full URL
             if domain in BLACKLISTED_DOMAINS or url in BLACKLISTED_DOMAINS:
                 return {
@@ -388,12 +388,12 @@ class URLService:
                     'reason': 'Layer 2: Local Blacklist'
                 }
             
-            # ============================================================
+            
             # LAYER 3: GOOGLE SAFE BROWSING API
-            # ============================================================
+            
             is_threat, reason = check_google_safe_browsing(url)
             
-            # If Google says THREAT → Block immediately
+            # If Google says THREAT Block immediately
             if is_threat:
                 return {
                     'is_phishing': True,
@@ -411,10 +411,10 @@ class URLService:
                     'reason': 'Layer 3: Google Safe Browsing (Safe)'
                 }
             
-            # If Google ERROR or UNKNOWN → Pass to Layer 4 (SVM ML)
-            # ============================================================
-            # LAYER 4: SVM ML ENGINE (Zero-Day Trap)
-            # ============================================================
+            # If Google ERROR or UNKNOWN  Pass to Layer 4 (SVM ML)
+            
+            # LAYER 4: SVM ML ENGINE 
+            
             features = self.extract_features(url)
             scaled = self.model.scale(features)
             pred = self.model.predict(scaled)[0]
@@ -422,7 +422,7 @@ class URLService:
             result = self.model.decode(pred)
             confidence = float(max(prob))
             
-            # Threshold 0.35 (custom engineered)
+            # Threshold 0.35 
             if confidence >= 0.35:
                 return {
                     'is_phishing': True,
@@ -431,9 +431,9 @@ class URLService:
                     'reason': f'Layer 4: SVM ML ({confidence:.2%} confidence)'
                 }
             
-            # ============================================================
+            
             # LAYER 5: STRICT SYSTEM FALLBACK
-            # ============================================================
+            
             return {
                 'is_phishing': False,
                 'probability': 0.0,
