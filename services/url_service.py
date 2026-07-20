@@ -45,10 +45,15 @@ TRUSTED_DOMAINS = {
     # INTERNATIONAL
     "un.org", "unicef.org", "who.int", "worldbank.org", "imf.org",
     "oecd.org", "nato.int", "europa.eu", "redcross.org",
+    
+    # NEWS & MEDIA (Prevent false positives)
+    "tmz.com", "www.tmz.com", "foxnews.com", "cnn.com", "edition.cnn.com",
+    "bbc.com", "bbc.co.uk", "reuters.com", "apnews.com", "aljazeera.com",
+    "nytimes.com", "washingtonpost.com", "theguardian.com",
 }
 
 # ============================================================
-# LAYER 2: LOCAL RISK BLACKLIST (Botswana Brand Spoofs)
+# LAYER 2: LOCAL RISK BLACKLIST
 # ============================================================
 BLACKLISTED_DOMAINS = {
     "123movieszone.online",
@@ -59,6 +64,8 @@ BLACKLISTED_DOMAINS = {
     "putlocker.to",
     "gomovies.to",
     "watchseries.to",
+    "ww1.goojara.to",
+    "goojara.to",
 }
 
 # ============================================================
@@ -276,14 +283,26 @@ class URLService:
             # LAYER 3: GOOGLE SAFE BROWSING API
             # ============================================================
             is_threat, reason = check_google_safe_browsing(url)
+            
+            # If Google says THREAT → Block immediately
             if is_threat:
                 return {
                     'is_phishing': True,
                     'probability': 1.0,
                     'result': 'phishing',
-                    'reason': f'Layer 3: Google Safe Browsing'
+                    'reason': 'Layer 3: Google Safe Browsing'
                 }
             
+            # If Google says SAFE → Trust Google, skip ML entirely
+            if not is_threat and "safe" in reason.lower():
+                return {
+                    'is_phishing': False,
+                    'probability': 0.0,
+                    'result': 'legitimate',
+                    'reason': 'Layer 3: Google Safe Browsing (Safe)'
+                }
+            
+            # If Google ERROR or UNKNOWN → Pass to Layer 4 (SVM ML)
             # ============================================================
             # LAYER 4: SVM ML ENGINE (Zero-Day Trap)
             # ============================================================
