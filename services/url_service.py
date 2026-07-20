@@ -297,9 +297,9 @@ class URLService:
             # Threshold 0.35 (custom engineered)
             if confidence >= 0.35:
                 return {
-                    'is_phishing': bool(result == 1),
+                    'is_phishing': True,
                     'probability': confidence,
-                    'result': 'phishing' if result == 1 else 'legitimate',
+                    'result': 'phishing',
                     'reason': f'Layer 4: SVM ML ({confidence:.2%} confidence)'
                 }
             
