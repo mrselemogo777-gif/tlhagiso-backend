@@ -3,7 +3,6 @@ from flask_cors import CORS
 import os
 import sys
 import traceback
-import re
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -19,9 +18,7 @@ def health_check():
         'status': 'running',
         'version': '1.0.0',
         'endpoints': [
-            'POST /api/scan/sms',
             'POST /api/scan/url',
-            'POST /api/scan/batch',
             'GET /api/health'
         ]
     })
@@ -56,128 +53,13 @@ def scan_url():
             'result': 'error'
         }), 500
 
-# SMS Scan Endpoint
-@app.route('/api/scan/sms', methods=['POST'])
-def scan_sms():
-    try:
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        sms_text = data.get('message') or data.get('text')
-        if not sms_text:
-            return jsonify({'error': 'No message/text provided'}), 400
-        
-        from services.sms_service import SMSService
-        sms_service = SMSService()
-        
-        result = sms_service.detect(sms_text)
-        result['type'] = 'sms'
-        result['message'] = sms_text
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        print(f"Error in scan_sms: {str(e)}")
-        print(traceback.format_exc())
-        return jsonify({
-            'error': str(e),
-            'type': 'sms',
-            'is_phishing': False,
-            'probability': 0.0,
-            'result': 'error'
-        }), 500
-
-# Batch Scan Endpoint - FIXED
-@app.route('/api/scan/batch', methods=['POST'])
-def scan_batch():
-    try:
-        data = request.get_json()
-        if not data or ('messages' not in data and 'urls' not in data):
-            return jsonify({'error': 'No messages or URLs provided'}), 400
-        
-        results = []
-        
-        # Check if it's SMS messages
-        if 'messages' in data:
-            from services.sms_service import SMSService
-            sms_service = SMSService()
-            
-            for msg in data['messages']:
-                try:
-                    result = sms_service.detect(msg)
-                    result['type'] = 'sms'
-                    result['message'] = msg
-                    results.append(result)
-                except Exception as e:
-                    results.append({
-                        'error': str(e),
-                        'message': msg,
-                        'is_phishing': False,
-                        'probability': 0.0,
-                        'result': 'error',
-                        'type': 'sms'
-                    })
-        
-        # Check if it's URLs
-        elif 'urls' in data:
-            from services.url_service import URLService
-            url_service = URLService()
-            
-            for url in data['urls']:
-                try:
-                    result = url_service.detect(url)
-                    result['type'] = 'url'
-                    result['url'] = url
-                    results.append(result)
-                except Exception as e:
-                    results.append({
-                        'error': str(e),
-                        'url': url,
-                        'is_phishing': False,
-                        'probability': 0.0,
-                        'result': 'error',
-                        'type': 'url'
-                    })
-        
-        return jsonify({
-            'results': results,
-            'total': len(results)
-        })
-        
-    except Exception as e:
-        print(f"Error in scan_batch: {str(e)}")
-        print(traceback.format_exc())
-        return jsonify({'error': str(e)}), 500
-
-# SMS Health Check
-@app.route('/api/sms/health', methods=['GET'])
-def sms_health():
-    try:
-        from services.sms_service import SMSService
-        sms_service = SMSService()
-        return jsonify({
-            'status': 'healthy',
-            'service': 'sms',
-            'layer1_keywords': 24,
-            'layer2_shortcodes': 12,
-            'layer3_ml': 'active'
-        })
-    except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'error': str(e)
-        }), 500
-
 # Root endpoint
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
         'app': 'Tlhagiso',
         'endpoints': [
-            'POST /api/scan/sms',
             'POST /api/scan/url',
-            'POST /api/scan/batch',
             'GET /api/health'
         ],
         'status': 'running',
@@ -192,9 +74,7 @@ if __name__ == '__main__':
     print(f"   Server: http://0.0.0.0:{port}")
     print("=" * 60)
     print("\n📋 Endpoints:")
-    print("   POST /api/scan/sms")
     print("   POST /api/scan/url")
-    print("   POST /api/scan/batch")
     print("   GET  /api/health")
     print("=" * 60)
     app.run(host='0.0.0.0', port=port, debug=False)
