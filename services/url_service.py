@@ -248,7 +248,7 @@ def is_trusted_domain(domain):
     if domain in TRUSTED_DOMAINS:
         return True
     
-    # LAYER 2: Blacklist
+    # LAYER 2: Blacklist (check both domain and full URL)
     if domain in BLACKLISTED_DOMAINS:
         return False
     
@@ -379,7 +379,8 @@ class URLService:
             # ============================================================
             # LAYER 2: LOCAL RISK BLACKLIST
             # ============================================================
-            if domain in BLACKLISTED_DOMAINS:
+            # Check against BOTH domain and full URL
+            if domain in BLACKLISTED_DOMAINS or url in BLACKLISTED_DOMAINS:
                 return {
                     'is_phishing': True,
                     'probability': 1.0,
