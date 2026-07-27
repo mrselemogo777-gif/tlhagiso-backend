@@ -358,7 +358,7 @@ class URLService:
             url = normalize_url(url)
             
             # ============================================================
-            # LAYER 1: DIRECT TRUSTED WHITELIST
+            # LAYER 1: BOTSWANA TRUSTED & BANKS (WHITELIST)
             # ============================================================
             if self._is_whitelisted(url):
                 return {
@@ -377,7 +377,7 @@ class URLService:
                 domain = domain.split(":")[0]
             
             # ============================================================
-            # LAYER 2: LOCAL RISK BLACKLIST
+            # LAYER 2: PIRACY & PHISHING BLACKLIST
             # ============================================================
             if domain in BLACKLISTED_DOMAINS or url in BLACKLISTED_DOMAINS:
                 return {
@@ -388,11 +388,10 @@ class URLService:
                 }
             
             # ============================================================
-            # LAYER 3: SAFE BROWSING API
+            # LAYER 3: GOOGLE SAFE BROWSING
             # ============================================================
             is_threat, reason = check_google_safe_browsing(url)
             
-            # If Google says THREAT Block immediately
             if is_threat:
                 return {
                     'is_phishing': True,
@@ -401,7 +400,6 @@ class URLService:
                     'reason': 'Layer 3: Safe Browsing'
                 }
             
-            # If Google says SAFE → Trust Google, skip ML entirely
             if not is_threat and "safe" in reason.lower():
                 return {
                     'is_phishing': False,
@@ -411,7 +409,7 @@ class URLService:
                 }
             
             # ============================================================
-            # LAYER 4: SVM ML ENGINE
+            # LAYER 4: SVM ML ENGINE (if Google fails)
             # ============================================================
             features = self.extract_features(url)
             scaled = self.model.scale(features)
@@ -429,7 +427,7 @@ class URLService:
                 }
             
             # ============================================================
-            # LAYER 5: STRICT SYSTEM FALLBACK
+            # LAYER 5: SYSTEM FALLBACK
             # ============================================================
             return {
                 'is_phishing': False,
