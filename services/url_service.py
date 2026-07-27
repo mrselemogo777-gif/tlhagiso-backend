@@ -11,7 +11,9 @@ from models.url_model import URLModel
 import requests
 
 
-# LAYER 1: DIRECT TRUSTED WHITELIST (O(1) Search)
+# ============================================================
+# LAYER 1: TRUSTED WHITELIST (DOMAINS ONLY)
+# ============================================================
 
 TRUSTED_DOMAINS = {
     # GLOBAL TECH
@@ -53,131 +55,62 @@ TRUSTED_DOMAINS = {
 }
 
 
-# LAYER 2: LOCAL RISK BLACKLIST 
+# ============================================================
+# LAYER 2: LOCAL BLACKLIST (DOMAINS ONLY)
+# ============================================================
 
 BLACKLISTED_DOMAINS = {
-    # STREAMING & PIRACY SITES 
-    "https://123movieszone.online", "http://123movieszone.online",
-    "https://123movies.to", "http://123movies.to",
-    "https://123movies.org", "http://123movies.org",
-    "https://123movies.com", "http://123movies.com",
-    "https://fmovies.to", "http://fmovies.to",
-    "https://fmovies.org", "http://fmovies.org",
-    "https://fmovies.com", "http://fmovies.com",
-    "https://soap2day.to", "http://soap2day.to",
-    "https://soap2day.org", "http://soap2day.org",
-    "https://soap2day.com", "http://soap2day.com",
-    "https://putlocker.to", "http://putlocker.to",
-    "https://putlocker.org", "http://putlocker.org",
-    "https://putlocker.com", "http://putlocker.com",
-    "https://gomovies.to", "http://gomovies.to",
-    "https://gomovies.org", "http://gomovies.org",
-    "https://gomovies.com", "http://gomovies.com",
-    "https://watchseries.to", "http://watchseries.to",
-    "https://watchseries.org", "http://watchseries.org",
-    "https://watchseries.com", "http://watchseries.com",
-    "https://moviebox.ph", "http://moviebox.ph",
-    "https://moviebox.to", "http://moviebox.to",
-    "https://moviebox.org", "http://moviebox.org",
-    "https://moviebox.com", "http://moviebox.com",
-    "https://ww1.goojara.to", "http://ww1.goojara.to",
-    "https://goojara.to", "http://goojara.to",
-    "https://thepiratebay.org", "http://thepiratebay.org",
-    "https://thepiratebay.com", "http://thepiratebay.com",
-    "https://yts.to", "http://yts.to",
-    "https://yts.org", "http://yts.org",
-    "https://yts.com", "http://yts.com",
-    "https://rarbg.to", "http://rarbg.to",
-    "https://rarbg.org", "http://rarbg.org",
-    "https://rarbg.com", "http://rarbg.com",
-    "https://popcorntime.to", "http://popcorntime.to",
-    "https://showbox.to", "http://showbox.to",
-    "https://cinemahd.to", "http://cinemahd.to",
-    "https://teatv.to", "http://teatv.to",
-    "https://cyberflix.to", "http://cyberflix.to",
-    "https://lookmovie.to", "http://lookmovie.to",
-    "https://solarfilm.to", "http://solarfilm.to",
-    "https://primewire.to", "http://primewire.to",
-    "https://yesmovies.to", "http://yesmovies.to",
-    "https://azmovies.to", "http://azmovies.to",
-    "https://moviesjoy.to", "http://moviesjoy.to",
-    "https://movie4k.to", "http://movie4k.to",
-    "https://xmovies8.to", "http://xmovies8.to",
-    "https://watchmovies.to", "http://watchmovies.to",
-    "https://freemovies.to", "http://freemovies.to",
-    "https://hdmovies.to", "http://hdmovies.to",
-    "https://4kmovies.to", "http://4kmovies.to",
+    # STREAMING & PIRACY
+    "123movieszone.online", "123movies.to", "123movies.org", "123movies.com",
+    "fmovies.to", "fmovies.org", "fmovies.com",
+    "soap2day.to", "soap2day.org", "soap2day.com",
+    "putlocker.to", "putlocker.org", "putlocker.com",
+    "gomovies.to", "gomovies.org", "gomovies.com",
+    "watchseries.to", "watchseries.org", "watchseries.com",
+    "moviebox.ph", "moviebox.to", "moviebox.org", "moviebox.com",
+    "goojara.to", "thepiratebay.org", "thepiratebay.com",
+    "yts.to", "yts.org", "yts.com",
+    "rarbg.to", "rarbg.org", "rarbg.com",
+    "popcorntime.to", "showbox.to", "cinemahd.to", "teatv.to",
+    "cyberflix.to", "lookmovie.to", "solarfilm.to", "primewire.to",
+    "yesmovies.to", "azmovies.to", "moviesjoy.to",
+    "movie4k.to", "xmovies8.to", "watchmovies.to",
+    "freemovies.to", "hdmovies.to", "4kmovies.to",
     
-    #  GLOBAL PHISHING SITES 
-    "https://paypal-verify.com", "http://paypal-verify.com",
-    "https://paypal-secure.com", "http://paypal-secure.com",
-    "https://paypal-login.xyz", "http://paypal-login.xyz",
-    "https://amazon-verify.com", "http://amazon-verify.com",
-    "https://amazon-secure.com", "http://amazon-secure.com",
-    "https://amazon-login.xyz", "http://amazon-login.xyz",
-    "https://apple-verify.com", "http://apple-verify.com",
-    "https://apple-id.xyz", "http://apple-id.xyz",
-    "https://icloud-verify.com", "http://icloud-verify.com",
-    "https://microsoft-verify.com", "http://microsoft-verify.com",
-    "https://outlook-verify.com", "http://outlook-verify.com",
-    "https://hotmail-verify.com", "http://hotmail-verify.com",
-    "https://google-verify.com", "http://google-verify.com",
-    "https://gmail-verify.com", "http://gmail-verify.com",
-    "https://drive-verify.com", "http://drive-verify.com",
-    "https://facebook-login.xyz", "http://facebook-login.xyz",
-    "https://instagram-verify.com", "http://instagram-verify.com",
-    "https://twitter-verify.com", "http://twitter-verify.com",
-    "https://linkedin-verify.com", "http://linkedin-verify.com",
-    "https://whatsapp-verify.com", "http://whatsapp-verify.com",
-    "https://telegram-verify.com", "http://telegram-verify.com",
+    # GLOBAL PHISHING
+    "paypal-verify.com", "paypal-secure.com", "paypal-login.xyz",
+    "amazon-verify.com", "amazon-secure.com", "amazon-login.xyz",
+    "apple-verify.com", "apple-id.xyz", "icloud-verify.com",
+    "microsoft-verify.com", "outlook-verify.com", "hotmail-verify.com",
+    "google-verify.com", "gmail-verify.com", "drive-verify.com",
+    "facebook-login.xyz", "instagram-verify.com", "twitter-verify.com",
+    "linkedin-verify.com", "whatsapp-verify.com", "telegram-verify.com",
     
-    #  BANKING PHISHING 
-    "https://chase-login.com", "http://chase-login.com",
-    "https://chase-verify.com", "http://chase-verify.com",
-    "https://bankofamerica-verify.com", "http://bankofamerica-verify.com",
-    "https://wellsfargo-verify.com", "http://wellsfargo-verify.com",
-    "https://citibank-verify.com", "http://citibank-verify.com",
-    "https://hsbc-verify.com", "http://hsbc-verify.com",
-    "https://barclays-verify.com", "http://barclays-verify.com",
-    "https://lloyds-verify.com", "http://lloyds-verify.com",
-    "https://natwest-verify.com", "http://natwest-verify.com",
-    "https://santander-verify.com", "http://santander-verify.com",
+    # BANKING PHISHING
+    "chase-login.com", "chase-verify.com",
+    "bankofamerica-verify.com", "wellsfargo-verify.com",
+    "citibank-verify.com", "hsbc-verify.com",
+    "barclays-verify.com", "lloyds-verify.com",
+    "natwest-verify.com", "santander-verify.com",
     
-    #  BOTSWANA PHISHING SITES 
-    "https://mascom-promo.com", "http://mascom-promo.com",
-    "https://mascom-rewards.com", "http://mascom-rewards.com",
-    "https://mascom-login.xyz", "http://mascom-login.xyz",
-    "https://orange-promo.com", "http://orange-promo.com",
-    "https://orange-rewards.com", "http://orange-rewards.com",
-    "https://orange-login.xyz", "http://orange-login.xyz",
-    "https://btc-payment.com", "http://btc-payment.com",
-    "https://btc-renew.com", "http://btc-renew.com",
-    "https://btc-login.xyz", "http://btc-login.xyz",
-    "https://fnb-secure.com", "http://fnb-secure.com",
-    "https://fnb-login.xyz", "http://fnb-login.xyz",
-    "https://fnb-verify.com", "http://fnb-verify.com",
-    "https://stanbic-login.xyz", "http://stanbic-login.xyz",
-    "https://stanbic-verify.com", "http://stanbic-verify.com",
-    "https://bankofbotswana-login.xyz", "http://bankofbotswana-login.xyz",
-    "https://bob-login.xyz", "http://bob-login.xyz",
-    "https://bofinet-payment.com", "http://bofinet-payment.com",
-    "https://burs-refund.com", "http://burs-refund.com",
+    # BOTSWANA PHISHING
+    "mascom-promo.com", "mascom-rewards.com", "mascom-login.xyz",
+    "orange-promo.com", "orange-rewards.com", "orange-login.xyz",
+    "btc-payment.com", "btc-renew.com", "btc-login.xyz",
+    "fnb-secure.com", "fnb-login.xyz", "fnb-verify.com",
+    "stanbic-login.xyz", "stanbic-verify.com",
+    "bankofbotswana-login.xyz", "bob-login.xyz",
+    "bofinet-payment.com", "burs-refund.com",
     
-    #  URL SHORTENERS 
-    "https://bit.ly", "http://bit.ly",
-    "https://tinyurl.com", "http://tinyurl.com",
-    "https://adf.ly", "http://adf.ly",
-    "https://shorte.st", "http://shorte.st",
-    "https://buff.ly", "http://buff.ly",
-    "https://cutt.ly", "http://cutt.ly",
-    "https://ow.ly", "http://ow.ly",
-    "https://goo.gl", "http://goo.gl",
-    "https://is.gd", "http://is.gd",
-    "https://linktr.ee", "http://linktr.ee",
+    # URL SHORTENERS
+    "bit.ly", "tinyurl.com", "adf.ly", "shorte.st",
+    "buff.ly", "cutt.ly", "ow.ly", "goo.gl", "is.gd", "linktr.ee",
 }
 
 
+# ============================================================
 # LAYER 3: GOOGLE SAFE BROWSING API
+# ============================================================
 
 GOOGLE_SAFE_BROWSING_KEY = os.environ.get('GOOGLE_SAFE_BROWSING_KEY', '')
 
@@ -214,7 +147,9 @@ def check_google_safe_browsing(url):
         return False, f"Error: {str(e)}"
 
 
-# LAYER 4: SVM ML ENGINE 
+# ============================================================
+# LAYER 4: SVM ML ENGINE
+# ============================================================
 
 PLATFORM_WILDCARDS = {
     "github.io", "vercel.app", "netlify.app", "pages.dev",
@@ -226,45 +161,44 @@ STRICT_TLDS = {
     ".ac.za", ".ac.uk", ".edu.za", ".mil",
 }
 
-def normalize_url(url):
-    if url and url.endswith('/'):
-        url = url[:-1]
-    return url
 
-def is_trusted_domain(domain):
+# ============================================================
+# HELPER FUNCTIONS
+# ============================================================
+
+def normalize_url(url):
+    """Normalize URL: strip spaces, add https:// if missing, remove trailing slash"""
+    if not url:
+        return ""
+    url = str(url).strip().lower()
+    if not url.startswith(('http://', 'https://')):
+        url = 'https://' + url
+    return url.rstrip('/')
+
+def is_whitelisted_domain(domain):
+    """Check if domain is in whitelist (exact match OR subdomain)"""
     domain = domain.lower().strip()
-    
-    if domain.startswith('http://') or domain.startswith('https://'):
-        parsed = urlparse(domain)
-        domain = parsed.netloc or domain
-    if '/' in domain:
-        domain = domain.split('/')[0]
-    if ':' in domain:
-        domain = domain.split(':')[0]
-    if domain.startswith('www.'):
-        domain = domain[4:]
-    
-    # LAYER 1: Whitelist
-    if domain in TRUSTED_DOMAINS:
-        return True
-    
-    # LAYER 2: Blacklist (check both domain and full URL)
-    if domain in BLACKLISTED_DOMAINS:
-        return False
-    
-    # Platform Wildcards
-    if any(domain == wc or domain.endswith('.' + wc) for wc in PLATFORM_WILDCARDS):
-        return True
-    
-    # Strict TLDs
-    if any(domain.endswith(tld) for tld in STRICT_TLDS):
-        return True
-    
+    for trusted in TRUSTED_DOMAINS:
+        if domain == trusted or domain.endswith('.' + trusted):
+            return True
     return False
 
+def is_blacklisted_domain(domain):
+    """Check if domain is in blacklist (exact match OR subdomain)"""
+    domain = domain.lower().strip()
+    for blocked in BLACKLISTED_DOMAINS:
+        if domain == blocked or domain.endswith('.' + blocked):
+            return True
+    return False
 
+def is_trusted_domain(domain):
+    """Legacy function – kept for compatibility"""
+    return is_whitelisted_domain(domain)
+
+
+# ============================================================
 # URL SERVICE CLASS
-
+# ============================================================
 
 class URLService:
     def __init__(self):
@@ -282,12 +216,10 @@ class URLService:
         print(f"   Layer 2: Blacklist ({len(BLACKLISTED_DOMAINS)} domains)")
         print(f"   Layer 3: Safe Browsing API (Active)")
         print(f"   Layer 4: SVM ML Engine (97.66% accuracy)")
-        print(f"   Layer 5: System Fallback (Default Safe)")
+        print(f"   Layer 5: Final Verdict (Default Safe)")
     
     def _is_whitelisted(self, url):
-        try:
-            if not url.startswith(("http://", "https://")):
-                url = "https://" + url
+        """Check if URL is whitelisted – called by detect()"""
         try:
             url = normalize_url(url)
             parsed = urlparse(url)
@@ -296,11 +228,26 @@ class URLService:
                 domain = domain[4:]
             if ":" in domain:
                 domain = domain.split(":")[0]
-            return is_trusted_domain(domain)
+            return is_whitelisted_domain(domain)
+        except Exception:
+            return False
+    
+    def _is_blacklisted(self, url):
+        """Check if URL is blacklisted – called by detect()"""
+        try:
+            url = normalize_url(url)
+            parsed = urlparse(url)
+            domain = parsed.netloc.lower()
+            if domain.startswith("www."):
+                domain = domain[4:]
+            if ":" in domain:
+                domain = domain.split(":")[0]
+            return is_blacklisted_domain(domain)
         except Exception:
             return False
     
     def extract_features(self, url):
+        """Extract features for ML model"""
         url = str(url).lower()
         features = {}
         features['url_len'] = len(url)
@@ -357,11 +304,13 @@ class URLService:
         return features_df[self.features]
     
     def detect(self, url):
+        """Main detection method – runs all 5 layers"""
         try:
+            # Normalize URL FIRST
             url = normalize_url(url)
             
             # ============================================================
-            # LAYER 1: BOTSWANA TRUSTED & BANKS (WHITELIST)
+            # LAYER 1: TRUSTED WHITELIST
             # ============================================================
             if self._is_whitelisted(url):
                 return {
@@ -371,18 +320,10 @@ class URLService:
                     'reason': 'Layer 1: Trusted Whitelist'
                 }
             
-            # Extract domain for blacklist check
-            parsed = urlparse(url)
-            domain = parsed.netloc.lower()
-            if domain.startswith("www."):
-                domain = domain[4:]
-            if ":" in domain:
-                domain = domain.split(":")[0]
-            
             # ============================================================
-            # LAYER 2: PIRACY & PHISHING BLACKLIST
+            # LAYER 2: LOCAL BLACKLIST
             # ============================================================
-            if domain in BLACKLISTED_DOMAINS or url in BLACKLISTED_DOMAINS:
+            if self._is_blacklisted(url):
                 return {
                     'is_phishing': True,
                     'probability': 1.0,
@@ -395,6 +336,7 @@ class URLService:
             # ============================================================
             is_threat, reason = check_google_safe_browsing(url)
             
+            # Only stop if Google finds a threat
             if is_threat:
                 return {
                     'is_phishing': True,
@@ -403,16 +345,11 @@ class URLService:
                     'reason': 'Layer 3: Safe Browsing'
                 }
             
-            if not is_threat and "safe" in reason.lower():
-                return {
-                    'is_phishing': False,
-                    'probability': 0.0,
-                    'result': 'legitimate',
-                    'reason': 'Layer 3: Safe Browsing (Safe)'
-                }
+            # If Google says safe or errors → CONTINUE TO LAYER 4
+            # (Google is advisory, not authoritative)
             
             # ============================================================
-            # LAYER 4: SVM ML ENGINE (if Google fails)
+            # LAYER 4: SVM ML ENGINE
             # ============================================================
             features = self.extract_features(url)
             scaled = self.model.scale(features)
@@ -421,7 +358,8 @@ class URLService:
             result = self.model.decode(pred)
             confidence = float(max(prob))
             
-            if confidence >= 0.35:
+            # Only flag phishing if ML predicts phishing AND confidence >= 35%
+            if result == "phishing" and confidence >= 0.35:
                 return {
                     'is_phishing': True,
                     'probability': confidence,
@@ -430,13 +368,13 @@ class URLService:
                 }
             
             # ============================================================
-            # LAYER 5: SYSTEM FALLBACK
+            # LAYER 5: FINAL VERDICT
             # ============================================================
             return {
                 'is_phishing': False,
                 'probability': 0.0,
                 'result': 'legitimate',
-                'reason': 'Layer 5: System Fallback (Safe)'
+                'reason': 'Layer 5: Final Verdict (Safe)'
             }
             
         except Exception as e:
