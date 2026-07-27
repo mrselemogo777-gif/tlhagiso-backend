@@ -357,9 +357,9 @@ class URLService:
         try:
             url = normalize_url(url)
             
-            
+            # ============================================================
             # LAYER 1: DIRECT TRUSTED WHITELIST
-            
+            # ============================================================
             if self._is_whitelisted(url):
                 return {
                     'is_phishing': False,
@@ -376,10 +376,9 @@ class URLService:
             if ":" in domain:
                 domain = domain.split(":")[0]
             
-            
+            # ============================================================
             # LAYER 2: LOCAL RISK BLACKLIST
-        
-            # Check against BOTH domain and full URL
+            # ============================================================
             if domain in BLACKLISTED_DOMAINS or url in BLACKLISTED_DOMAINS:
                 return {
                     'is_phishing': True,
@@ -388,9 +387,9 @@ class URLService:
                     'reason': 'Layer 2: Local Blacklist'
                 }
             
-            
-            # LAYER 3: GOOGLE SAFE BROWSING API
-            
+            # ============================================================
+            # LAYER 3: SAFE BROWSING API
+            # ============================================================
             is_threat, reason = check_google_safe_browsing(url)
             
             # If Google says THREAT Block immediately
@@ -411,10 +410,9 @@ class URLService:
                     'reason': 'Layer 3: Safe Browsing (Safe)'
                 }
             
-            # If Google ERROR or UNKNOWN  Pass to Layer 4 (SVM ML)
-            
-            # LAYER 4: SVM ML ENGINE 
-            
+            # ============================================================
+            # LAYER 4: SVM ML ENGINE
+            # ============================================================
             features = self.extract_features(url)
             scaled = self.model.scale(features)
             pred = self.model.predict(scaled)[0]
@@ -422,7 +420,6 @@ class URLService:
             result = self.model.decode(pred)
             confidence = float(max(prob))
             
-            # Threshold 0.35 
             if confidence >= 0.35:
                 return {
                     'is_phishing': True,
@@ -431,9 +428,9 @@ class URLService:
                     'reason': f'Layer 4: SVM ML ({confidence:.2%} confidence)'
                 }
             
-            
+            # ============================================================
             # LAYER 5: STRICT SYSTEM FALLBACK
-            
+            # ============================================================
             return {
                 'is_phishing': False,
                 'probability': 0.0,
