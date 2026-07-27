@@ -286,6 +286,9 @@ class URLService:
     
     def _is_whitelisted(self, url):
         try:
+            if not url.startswith(("http://", "https://")):
+                url = "https://" + url
+        try:
             url = normalize_url(url)
             parsed = urlparse(url)
             domain = parsed.netloc.lower()
