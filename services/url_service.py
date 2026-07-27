@@ -280,7 +280,7 @@ class URLService:
         print(" Professional 5-Layer Hybrid Defense System Initialized")
         print(f"   Layer 1: Whitelist ({len(TRUSTED_DOMAINS)} domains)")
         print(f"   Layer 2: Blacklist ({len(BLACKLISTED_DOMAINS)} domains)")
-        print(f"   Layer 3: Google Safe Browsing API (Active)")
+        print(f"   Layer 3: Safe Browsing API (Active)")
         print(f"   Layer 4: SVM ML Engine (97.66% accuracy)")
         print(f"   Layer 5: System Fallback (Default Safe)")
     
@@ -399,7 +399,7 @@ class URLService:
                     'is_phishing': True,
                     'probability': 1.0,
                     'result': 'phishing',
-                    'reason': 'Layer 3: Google Safe Browsing'
+                    'reason': 'Layer 3: Safe Browsing'
                 }
             
             # If Google says SAFE → Trust Google, skip ML entirely
@@ -408,7 +408,7 @@ class URLService:
                     'is_phishing': False,
                     'probability': 0.0,
                     'result': 'legitimate',
-                    'reason': 'Layer 3: Google Safe Browsing (Safe)'
+                    'reason': 'Layer 3: Safe Browsing (Safe)'
                 }
             
             # If Google ERROR or UNKNOWN  Pass to Layer 4 (SVM ML)
