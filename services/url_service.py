@@ -381,7 +381,7 @@ class URLService:
             confidence = float(max(prob))
             
             # Only flag phishing if ML predicts phishing AND confidence >= 35%
-            if result == "phishing" and confidence >= 0.35:
+            if (result == 1 or result == "phishing") and confidence >= 0.35:
                 return {
                     'is_phishing': True,
                     'probability': confidence,
