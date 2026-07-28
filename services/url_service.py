@@ -102,7 +102,7 @@ BLACKLISTED_DOMAINS = {
     "bankofbotswana-login.xyz", "bob-login.xyz",
     "bofinet-payment.com", "burs-refund.com",
     
-    # URL SHORTENERS (EXPANDED – SCAM‑PRONE)
+    # URL SHORTENERS (EXPANDED)
     "bit.ly", "tinyurl.com", "adf.ly", "shorte.st",
     "buff.ly", "cutt.ly", "ow.ly", "goo.gl", "is.gd", "linktr.ee",
     "tiny.gdn", "tiny.one", "short.link", "shorturl.at", "rb.gy",
@@ -121,12 +121,6 @@ BLACKLISTED_DOMAINS = {
     "twitclicks.com", "twitthis.com", "u.bb", "ul.to",
     "url.ie", "url4e.com", "urlborg.com", "whurl.com",
     "xrl.us", "yep.it", "zip.net",
-
-    # SUSPICIOUS TLDs OFTEN USED FOR SCAMS
-    "gdn", "link", "click", "work", "space",
-    "website", "site", "online", "tech", "fun",
-    "top", "xyz", "club", "shop", "live",
-    "stream", "bid", "win", "loan", "review",
 }
 
 
@@ -380,7 +374,7 @@ class URLService:
             result = self.model.decode(pred)
             confidence = float(max(prob))
             
-            # Only flag phishing if ML predicts phishing AND confidence >= 35%
+            # FIX: Check for BOTH integer (1) and string ("phishing")
             if (result == 1 or result == "phishing") and confidence >= 0.35:
                 return {
                     'is_phishing': True,
