@@ -102,9 +102,31 @@ BLACKLISTED_DOMAINS = {
     "bankofbotswana-login.xyz", "bob-login.xyz",
     "bofinet-payment.com", "burs-refund.com",
     
-    # URL SHORTENERS
+    # URL SHORTENERS (EXPANDED – SCAM‑PRONE)
     "bit.ly", "tinyurl.com", "adf.ly", "shorte.st",
     "buff.ly", "cutt.ly", "ow.ly", "goo.gl", "is.gd", "linktr.ee",
+    "tiny.gdn", "tiny.one", "short.link", "shorturl.at", "rb.gy",
+    "v.gd", "clck.ru", "soo.gd", "s.id", "urlz.fr", "j.mp",
+    "qrco.de", "qr.net", "ow.li", "shrtco.de", "9qr.de",
+    "gg.gg", "bitly.com", "yourls.org", "kutt.it", "t.co",
+    "lnkd.in", "smly.co", "dlvr.it", "pixly.me",
+    "mcaf.ee", "tiny.cc", "tr.im", "vzti.me", "x.co",
+    "yfrog.com", "zpr.io", "ad.vu", "bc.vc", "cli.gs",
+    "easyurl.net", "flic.kr", "fuuu.be", "go.usa.gov", "h2m.com",
+    "kip.it", "l9k.net", "lt.tl", "m1p.de", "merky.de",
+    "notlong.com", "nsfw.in", "nxy.in", "oiip.io", "q.gs",
+    "qrl.li", "r.im", "redir.ec", "rl.fm", "s7y.us",
+    "scrnch.me", "shorl.com", "shortie.me", "shoutkey.com",
+    "snipr.com", "snipurl.com", "sp2.ro", "tinyarrow.com",
+    "twitclicks.com", "twitthis.com", "u.bb", "ul.to",
+    "url.ie", "url4e.com", "urlborg.com", "whurl.com",
+    "xrl.us", "yep.it", "zip.net",
+
+    # SUSPICIOUS TLDs OFTEN USED FOR SCAMS
+    "gdn", "link", "click", "work", "space",
+    "website", "site", "online", "tech", "fun",
+    "top", "xyz", "club", "shop", "live",
+    "stream", "bid", "win", "loan", "review",
 }
 
 
