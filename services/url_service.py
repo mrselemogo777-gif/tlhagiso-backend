@@ -1,4 +1,4 @@
-# services/url_service.py — Professional 5-Layer Hybrid Defense
+# services/url_service.py — Professional 6-Layer Hybrid Defense
 import re
 import pandas as pd
 import math
@@ -12,11 +12,43 @@ import requests
 
 
 # ============================================================
-# LAYER 1: TRUSTED WHITELIST (DOMAINS ONLY)
+# LAYER 0: ADULT CONTENT BLOCKLIST
+# ============================================================
+
+ADULT_DOMAINS = set()
+
+def load_adult_blocklist():
+    """Load adult domain blocklist from p-List"""
+    global ADULT_DOMAINS
+    try:
+        print("🔄 Loading adult content blocklist...")
+        response = requests.get(
+            "https://raw.githubusercontent.com/brice1988/p-List/main/block.txt",
+            timeout=15
+        )
+        if response.status_code == 200:
+            ADULT_DOMAINS = set(response.text.splitlines())
+            print(f"   ✅ Loaded {len(ADULT_DOMAINS)} adult domains")
+        else:
+            print(f"   ⚠️ Failed to load adult list (status {response.status_code})")
+    except Exception as e:
+        print(f"   ⚠️ Could not load adult list: {e}")
+
+load_adult_blocklist()
+
+def is_adult_domain(domain):
+    domain = domain.lower().strip()
+    for adult in ADULT_DOMAINS:
+        if domain == adult or domain.endswith('.' + adult):
+            return True
+    return False
+
+
+# ============================================================
+# LAYER 1: TRUSTED WHITELIST
 # ============================================================
 
 TRUSTED_DOMAINS = {
-    # GLOBAL TECH
     "google.com", "gmail.com", "youtube.com", "drive.google.com",
     "docs.google.com", "mail.google.com", "calendar.google.com",
     "maps.google.com", "analytics.google.com", "googleapis.com",
@@ -28,8 +60,6 @@ TRUSTED_DOMAINS = {
     "linkedin.com", "whatsapp.com", "telegram.org", "discord.com",
     "slack.com", "zoom.us", "skype.com", "wikipedia.org",
     "paypal.com", "ebay.com", "etsy.com", "shopify.com",
-    
-    # BOTSWANA
     "gov.bw", "parliament.gov.bw", "presidency.gov.bw",
     "justice.gov.bw", "health.gov.bw", "education.gov.bw",
     "mascom.bw", "orange.co.bw", "btc.co.bw", "mtn.co.bw",
@@ -37,18 +67,12 @@ TRUSTED_DOMAINS = {
     "standardbank.co.bw", "absa.co.bw", "nedbank.co.bw",
     "ub.bw", "bca.bw", "biust.ac.bw", "bufm.ac.bw",
     "dailynews.gov.bw", "mmegi.bw", "choppies.co.bw",
-    
-    # SOUTH AFRICA
     "gov.za", "parliament.gov.za", "saps.gov.za", "sars.gov.za",
     "eskom.co.za", "transnet.co.za", "telkom.co.za",
     "fnb.co.za", "standardbank.co.za", "absa.co.za", "nedbank.co.za",
     "capitec.co.za", "discovery.co.za", "mtn.co.za", "vodacom.co.za",
-    
-    # INTERNATIONAL
     "un.org", "unicef.org", "who.int", "worldbank.org", "imf.org",
     "oecd.org", "nato.int", "europa.eu", "redcross.org",
-    
-    # NEWS & MEDIA 
     "tmz.com", "www.tmz.com", "foxnews.com", "cnn.com", "edition.cnn.com",
     "bbc.com", "bbc.co.uk", "reuters.com", "apnews.com", "aljazeera.com",
     "nytimes.com", "washingtonpost.com", "theguardian.com",
@@ -56,11 +80,10 @@ TRUSTED_DOMAINS = {
 
 
 # ============================================================
-# LAYER 2: LOCAL BLACKLIST (DOMAINS ONLY)
+# LAYER 2: LOCAL BLACKLIST
 # ============================================================
 
 BLACKLISTED_DOMAINS = {
-    # STREAMING & PIRACY
     "123movieszone.online", "123movies.to", "123movies.org", "123movies.com",
     "fmovies.to", "fmovies.org", "fmovies.com",
     "soap2day.to", "soap2day.org", "soap2day.com",
@@ -76,8 +99,6 @@ BLACKLISTED_DOMAINS = {
     "yesmovies.to", "azmovies.to", "moviesjoy.to",
     "movie4k.to", "xmovies8.to", "watchmovies.to",
     "freemovies.to", "hdmovies.to", "4kmovies.to",
-    
-    # GLOBAL PHISHING
     "paypal-verify.com", "paypal-secure.com", "paypal-login.xyz",
     "amazon-verify.com", "amazon-secure.com", "amazon-login.xyz",
     "apple-verify.com", "apple-id.xyz", "icloud-verify.com",
@@ -85,15 +106,11 @@ BLACKLISTED_DOMAINS = {
     "google-verify.com", "gmail-verify.com", "drive-verify.com",
     "facebook-login.xyz", "instagram-verify.com", "twitter-verify.com",
     "linkedin-verify.com", "whatsapp-verify.com", "telegram-verify.com",
-    
-    # BANKING PHISHING
     "chase-login.com", "chase-verify.com",
     "bankofamerica-verify.com", "wellsfargo-verify.com",
     "citibank-verify.com", "hsbc-verify.com",
     "barclays-verify.com", "lloyds-verify.com",
     "natwest-verify.com", "santander-verify.com",
-    
-    # BOTSWANA PHISHING
     "mascom-promo.com", "mascom-rewards.com", "mascom-login.xyz",
     "orange-promo.com", "orange-rewards.com", "orange-login.xyz",
     "btc-payment.com", "btc-renew.com", "btc-login.xyz",
@@ -101,8 +118,6 @@ BLACKLISTED_DOMAINS = {
     "stanbic-login.xyz", "stanbic-verify.com",
     "bankofbotswana-login.xyz", "bob-login.xyz",
     "bofinet-payment.com", "burs-refund.com",
-    
-    # URL SHORTENERS (EXPANDED)
     "bit.ly", "tinyurl.com", "adf.ly", "shorte.st",
     "buff.ly", "cutt.ly", "ow.ly", "goo.gl", "is.gd", "linktr.ee",
     "tiny.gdn", "tiny.one", "short.link", "shorturl.at", "rb.gy",
@@ -125,18 +140,15 @@ BLACKLISTED_DOMAINS = {
 
 
 # ============================================================
-# LAYER 3: GOOGLE SAFE BROWSING API
+# LAYER 3: GOOGLE SAFE BROWSING
 # ============================================================
 
 GOOGLE_SAFE_BROWSING_KEY = os.environ.get('GOOGLE_SAFE_BROWSING_KEY', '')
 
 def check_google_safe_browsing(url):
-    """Query Google's global commercial threat database"""
     if not GOOGLE_SAFE_BROWSING_KEY:
         return False, "Google API key missing"
-    
     api_url = "https://safebrowsing.googleapis.com/v4/threatMatches:find"
-    
     payload = {
         "client": {"clientId": "tlhagiso", "clientVersion": "1.0.0"},
         "threatInfo": {
@@ -146,10 +158,8 @@ def check_google_safe_browsing(url):
             "threatEntries": [{"url": url}]
         }
     }
-    
     try:
         response = requests.post(f"{api_url}?key={GOOGLE_SAFE_BROWSING_KEY}", json=payload, timeout=5)
-        
         if response.status_code == 200:
             result = response.json()
             if "matches" in result:
@@ -157,10 +167,8 @@ def check_google_safe_browsing(url):
             return False, "Google says safe"
         else:
             return False, f"Google API error: {response.status_code}"
-    except requests.exceptions.Timeout:
+    except:
         return False, "Google timeout"
-    except Exception as e:
-        return False, f"Error: {str(e)}"
 
 
 # ============================================================
@@ -183,7 +191,6 @@ STRICT_TLDS = {
 # ============================================================
 
 def normalize_url(url):
-    """Normalize URL: strip spaces, add https:// if missing, remove trailing slash"""
     if not url:
         return ""
     url = str(url).strip().lower()
@@ -192,7 +199,6 @@ def normalize_url(url):
     return url.rstrip('/')
 
 def is_whitelisted_domain(domain):
-    """Check if domain is in whitelist (exact match OR subdomain)"""
     domain = domain.lower().strip()
     for trusted in TRUSTED_DOMAINS:
         if domain == trusted or domain.endswith('.' + trusted):
@@ -200,16 +206,11 @@ def is_whitelisted_domain(domain):
     return False
 
 def is_blacklisted_domain(domain):
-    """Check if domain is in blacklist (exact match OR subdomain)"""
     domain = domain.lower().strip()
     for blocked in BLACKLISTED_DOMAINS:
         if domain == blocked or domain.endswith('.' + blocked):
             return True
     return False
-
-def is_trusted_domain(domain):
-    """Legacy function – kept for compatibility"""
-    return is_whitelisted_domain(domain)
 
 
 # ============================================================
@@ -227,7 +228,8 @@ class URLService:
             'letter_ratio', 'digit_ratio', 'spec_ratio',
             'path_len', 'query_len', 'entropy'
         ]
-        print(" Professional 5-Layer Hybrid Defense System Initialized")
+        print(" Professional 6-Layer Hybrid Defense System Initialized")
+        print(f"   Layer 0: Adult Blocklist ({len(ADULT_DOMAINS)} domains)")
         print(f"   Layer 1: Whitelist ({len(TRUSTED_DOMAINS)} domains)")
         print(f"   Layer 2: Blacklist ({len(BLACKLISTED_DOMAINS)} domains)")
         print(f"   Layer 3: Safe Browsing API (Active)")
@@ -235,7 +237,6 @@ class URLService:
         print(f"   Layer 5: Final Verdict (Default Safe)")
     
     def _is_whitelisted(self, url):
-        """Check if URL is whitelisted – called by detect()"""
         try:
             url = normalize_url(url)
             parsed = urlparse(url)
@@ -245,11 +246,10 @@ class URLService:
             if ":" in domain:
                 domain = domain.split(":")[0]
             return is_whitelisted_domain(domain)
-        except Exception:
+        except:
             return False
     
     def _is_blacklisted(self, url):
-        """Check if URL is blacklisted – called by detect()"""
         try:
             url = normalize_url(url)
             parsed = urlparse(url)
@@ -259,11 +259,23 @@ class URLService:
             if ":" in domain:
                 domain = domain.split(":")[0]
             return is_blacklisted_domain(domain)
-        except Exception:
+        except:
+            return False
+    
+    def _is_adult(self, url):
+        try:
+            url = normalize_url(url)
+            parsed = urlparse(url)
+            domain = parsed.netloc.lower()
+            if domain.startswith("www."):
+                domain = domain[4:]
+            if ":" in domain:
+                domain = domain.split(":")[0]
+            return is_adult_domain(domain)
+        except:
             return False
     
     def extract_features(self, url):
-        """Extract features for ML model"""
         url = str(url).lower()
         features = {}
         features['url_len'] = len(url)
@@ -320,14 +332,19 @@ class URLService:
         return features_df[self.features]
     
     def detect(self, url):
-        """Main detection method – runs all 5 layers"""
         try:
-            # Normalize URL FIRST
             url = normalize_url(url)
             
-            # ============================================================
+            # LAYER 0: ADULT CONTENT BLOCKLIST
+            if self._is_adult(url):
+                return {
+                    'is_phishing': True,
+                    'probability': 1.0,
+                    'result': 'blocked',
+                    'reason': 'Layer 0: Adult Content Blocked'
+                }
+            
             # LAYER 1: TRUSTED WHITELIST
-            # ============================================================
             if self._is_whitelisted(url):
                 return {
                     'is_phishing': False,
@@ -336,9 +353,7 @@ class URLService:
                     'reason': 'Layer 1: Trusted Whitelist'
                 }
             
-            # ============================================================
             # LAYER 2: LOCAL BLACKLIST
-            # ============================================================
             if self._is_blacklisted(url):
                 return {
                     'is_phishing': True,
@@ -347,12 +362,8 @@ class URLService:
                     'reason': 'Layer 2: Local Blacklist'
                 }
             
-            # ============================================================
             # LAYER 3: GOOGLE SAFE BROWSING
-            # ============================================================
             is_threat, reason = check_google_safe_browsing(url)
-            
-            # Only stop if Google finds a threat
             if is_threat:
                 return {
                     'is_phishing': True,
@@ -361,12 +372,7 @@ class URLService:
                     'reason': 'Layer 3: Safe Browsing'
                 }
             
-            # If Google says safe or errors → CONTINUE TO LAYER 4
-            # (Google is advisory, not authoritative)
-            
-            # ============================================================
             # LAYER 4: SVM ML ENGINE
-            # ============================================================
             features = self.extract_features(url)
             scaled = self.model.scale(features)
             pred = self.model.predict(scaled)[0]
@@ -374,7 +380,6 @@ class URLService:
             result = self.model.decode(pred)
             confidence = float(max(prob))
             
-            # FIX: Check for BOTH integer (1) and string ("phishing")
             if (result == 1 or result == "phishing") and confidence >= 0.35:
                 return {
                     'is_phishing': True,
@@ -383,9 +388,7 @@ class URLService:
                     'reason': f'Layer 4: SVM ML ({confidence:.2%} confidence)'
                 }
             
-            # ============================================================
             # LAYER 5: FINAL VERDICT
-            # ============================================================
             return {
                 'is_phishing': False,
                 'probability': 0.0,
@@ -395,7 +398,6 @@ class URLService:
             
         except Exception as e:
             print(f"Error in detect: {str(e)}")
-            print(traceback.format_exc())
             return {
                 'is_phishing': False,
                 'probability': 0.0,
