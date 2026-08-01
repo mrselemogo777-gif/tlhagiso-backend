@@ -135,7 +135,7 @@ BLACKLISTED_DOMAINS = {
     "snipr.com", "snipurl.com", "sp2.ro", "tinyarrow.com",
     "twitclicks.com", "twitthis.com", "u.bb", "ul.to",
     "url.ie", "url4e.com", "urlborg.com", "whurl.com",
-    "xrl.us", "yep.it", "zip.net",
+    "xrl.us", "yep.it", "zip.net","pornhub.com","www.pornhub.com","https://pornhub.com","xvideoes.com","https://xvideos.com","www.xvideos.com","https://xnxx.com","xnxx.com","www.xnxx.com"
 }
 
 
